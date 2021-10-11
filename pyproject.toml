@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "content-bulk.online.scrapy"
+version = "0.1.0"
+description = ""
+authors = ["bulkinegra <v.valentinvolkovwr@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+Scrapy = "^2.5.1"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
