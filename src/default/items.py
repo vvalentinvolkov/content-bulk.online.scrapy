@@ -6,7 +6,23 @@
 import scrapy
 
 
-class DefaultItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+class CommonArticleItem(scrapy.Item):
+    """Общие поля для всех статей из разных источников"""
+    source = scrapy.Field()
+
+    title = scrapy.Field()
+    link = scrapy.Field()
+    likes = scrapy.Field()
+    reads = scrapy.Field()
+    visitors = scrapy.Field()
+    read_time = scrapy.Field()
+    subscribers = scrapy.Field()
+    comments = scrapy.Field()
+
+    parsing_date = scrapy.Field()
+    public_date = scrapy.Field()
+
+    length = scrapy.Field()
+    num_images = scrapy.Field()
+
+
