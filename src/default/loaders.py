@@ -1,11 +1,20 @@
 import re
 
 from itemloaders import ItemLoader
-from itemloaders.processors import Compose
+from itemloaders.processors import Compose, TakeFirst
 
 
 class ZenLoader(ItemLoader):
-    """Loader для статей из Zen"""
+    """Loader для статей из Zen -
+    обрабатывает полчаемые <Selector> в каждом поле для загрузки в бд"""
+
+    default_output_processor = TakeFirst()  # по умолчанию вощвращает str в неизменном виде
+
+    def add_str_value(self, field_name: str, value: str, *processors, **kw):
+        """ItemLoader.add_value() с проверкой типа для значения value"""
+        assert isinstance(value, str), 'Spider должен отдавать в ZenLoader значение типа str'
+        super().add_value(field_name, value, *processors, **kw)
+
     @staticmethod
     def _get_reads_or_views(s):
         try:
@@ -44,8 +53,7 @@ class ZenLoader(ItemLoader):
     #     except (ValueError, TypeError):
     #         return 0
 
-
-    source_out = Compose(lambda v: v)
+    # source_out = Compose(lambda v: v)
     title_out = Compose(lambda v: v)
     link_out = Compose(lambda v: v)
 

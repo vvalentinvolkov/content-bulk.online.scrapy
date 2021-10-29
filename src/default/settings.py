@@ -1,21 +1,13 @@
-# Scrapy settings for default project
-#
-# For simplicity, this file contains only settings considered important or
-# commonly used. You can find more settings consulting the documentation:
-#
-#     https://docs.scrapy.org/en/latest/topics/settings.html
-#     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-#     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+#MongoDB
+MONGO_URL = 'localhost:27017'
+MONGO_DB = 'scrapy_mongo'
 
-# selenium
+# Selenium
 from shutil import which
 
 SELENIUM_DRIVER_NAME = 'chrome'
 SELENIUM_DRIVER_EXECUTABLE_PATH = which('chromedriver')
 SELENIUM_DRIVER_ARGUMENTS = ['-headless']
-
-# scrapy-splash
-SPLASH_URL = 'http://0.0.0.0:8050'
 
 
 BOT_NAME = 'default'
@@ -73,9 +65,9 @@ DOWNLOADER_MIDDLEWARES = {
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    'default.pipelines.DefaultPipeline': 300,
-#}
+ITEM_PIPELINES = {
+   'default.pipelines.MongoPipeline': 100,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html

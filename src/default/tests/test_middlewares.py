@@ -1,5 +1,4 @@
 """This module contains the test cases for the middlewares of the ``scrapy_selenium`` package"""
-import unittest
 from unittest.mock import patch
 
 from scrapy import Request
