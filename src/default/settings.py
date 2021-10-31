@@ -1,6 +1,9 @@
 #MongoDB
+import scrapy
+
 MONGO_URL = 'localhost:27017'
-MONGO_DB = 'scrapy_mongo'
+MONGO_DB_NAME = 'scrapy_mongo'
+MONGO_COLLECTION_NAME = 'scrapy_articles'
 
 # Selenium
 from shutil import which
@@ -9,6 +12,9 @@ SELENIUM_DRIVER_NAME = 'chrome'
 SELENIUM_DRIVER_EXECUTABLE_PATH = which('chromedriver')
 SELENIUM_DRIVER_ARGUMENTS = ['-headless']
 
+import logging
+from selenium.webdriver.remote.remote_connection import LOGGER
+LOGGER.setLevel(logging.WARNING)
 
 BOT_NAME = 'default'
 
@@ -56,6 +62,9 @@ SPIDER_MIDDLEWARES = {
 DOWNLOADER_MIDDLEWARES = {
    'scrapy_selenium.SeleniumMiddleware': 800,
 }
+
+# Встроеный фильт дупликатов выключен - 'scrapy.dupefilters.BaseDupeFilter'
+DUPEFILTER_CLASS = 'scrapy.dupefilters.BaseDupeFilter'
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
