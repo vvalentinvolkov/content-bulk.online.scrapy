@@ -54,8 +54,8 @@ class ZenLoader(ItemLoader):
     #         return 0
 
     # source_out = Compose(lambda v: v)
-    title_out = Compose(lambda v: v)
-    link_out = Compose(lambda v: v)
+    # title_out = Compose(lambda v: v)
+    # url_out = Compose(lambda v: v)
 
     reads_out = Compose(lambda v: v)
     visitors_out = Compose(lambda v: v)

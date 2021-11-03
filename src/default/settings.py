@@ -1,9 +1,7 @@
 #MongoDB
-import scrapy
-
 MONGO_URL = 'localhost:27017'
-MONGO_DB_NAME = 'scrapy_mongo'
-MONGO_COLLECTION_NAME = 'scrapy_articles'
+DEFAULT_MONGO_DB_NAME = 'scrapy_mongo'
+DEFAULT_MONGO_COLLECTION_NAME = 'scrapy_articles'
 
 # Selenium
 from shutil import which
@@ -60,11 +58,12 @@ SPIDER_MIDDLEWARES = {
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
+   'default.middlewares.DuplicateFromDbMiddleware': 100,
    'scrapy_selenium.SeleniumMiddleware': 800,
 }
 
 # Встроеный фильт дупликатов выключен - 'scrapy.dupefilters.BaseDupeFilter'
-DUPEFILTER_CLASS = 'scrapy.dupefilters.BaseDupeFilter'
+DUPEFILTER_CLASS = 'default.db_dupefilter.DbDupeFilter'
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
