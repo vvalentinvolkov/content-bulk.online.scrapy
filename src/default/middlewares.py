@@ -11,8 +11,8 @@ class DuplicateFromDbMiddleware:
     def process_request(self, request, spider):
         """Проверяет наличие документа с url запроса и подымает IgnoreRequest если находит
         работает по flag='dup_middleware_active'"""
-        print('middle')
-        if 'dup_middleware' in request.flags and spider.collection.find_one({'url': request.url}):
-            print('DuplicateFromDbMiddleware - IgnoreRequest')
-            raise IgnoreRequest
+        print('DownLoadmiddle')
+        # if 'dup_middleware' in request.flags and spider.collection.find_one({'url': request.url}):
+        #     print('DuplicateFromDbMiddleware - IgnoreRequest')
+        #     raise IgnoreRequest
         return None

@@ -10,11 +10,6 @@ class ZenLoader(ItemLoader):
 
     default_output_processor = TakeFirst()  # по умолчанию вощвращает str в неизменном виде
 
-    def add_str_value(self, field_name: str, value: str, *processors, **kw):
-        """ItemLoader.add_value() с проверкой типа для значения value"""
-        assert isinstance(value, str), 'Spider должен отдавать в ZenLoader значение типа str'
-        super().add_value(field_name, value, *processors, **kw)
-
     @staticmethod
     def _get_reads_or_views(s):
         try:

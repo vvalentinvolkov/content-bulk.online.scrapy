@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from datetime import date
 
+import mongoengine
 import pymongo
 import scrapy
 from pymongo.errors import ConnectionFailure
@@ -26,11 +27,26 @@ class ZenSpider(scrapy.Spider):
 
     @classmethod
     def from_crawler(cls, crawler, *args, **kwargs):
-        mongo_url = crawler.settings.get('MONGO_URL')
-        mongo_db = crawler.settings.get('MONGO_DB_NAME')
-        col_name = crawler.settings.get('MONGO_COLLECTION_NAME')
-        return ZenSpider(mongo_url=mongo_url, mongo_db=mongo_db, col_name=col_name,)
+        # Устанавливаем соединение с бд и задаем алиас
+        host = crawler.settings.get('MONGO_HOST')
+        port = crawler.settings.get('MONGO_PORT')
+        db = crawler.settings.get('DEFAULT_MONGO_DB_NAME')
 
+        try:
+            client = mongoengine.connect(db=db, host=host, port=port)
+            client.admin.command('ping')
+            print(f"Connect to {db}")
+        except ConnectionFailure:
+            print(f'MongoDb is not available - closing the spider {cls}')
+            raise CloseSpider
+        spider = cls(*args, **kwargs)
+        spider._set_crawler(crawler)
+        return spider
+
+    def close(self, reason):
+        # Разрываем соединение когда паук закрывается
+        print(f'Mongoengine - disconnect(alias={self.db_alias})')
+        mongoengine.disconnect(alias=self.db_alias)
 
     def parse(self, response, **kwargs):
         """Ищет на главной странице ссылки на статьи,
@@ -54,9 +70,9 @@ class ZenSpider(scrapy.Spider):
     def parse_article(self, response, **kwargs):
         """Ищет инфу на странице статьи и передает значение из параметра "selector" в виде <Selector> -
         может передавать и список <Selector>"""
-        zen_loader = ZenLoader(item=ZenArticle(), selector=response.css('body'))
+        zen_loader = ZenLoader(selector=response.css('body'))
 
-        zen_loader.add_str_value('source', 'zen')
+        zen_loader.add_value('source', 'zen')
         zen_loader.add_css('title', 'h1::text')
         zen_loader.add_value('url', response.url)
         #

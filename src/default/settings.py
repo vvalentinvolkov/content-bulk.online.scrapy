@@ -1,7 +1,8 @@
 #MongoDB
-MONGO_URL = 'localhost:27017'
-DEFAULT_MONGO_DB_NAME = 'scrapy_mongo'
-DEFAULT_MONGO_COLLECTION_NAME = 'scrapy_articles'
+MONGO_HOST = 'localhost'
+MONGO_PORT = 27017
+DEFAULT_MONGO_DB_NAME = 'scrapy'
+DEFAULT_MONGO_COLLECTION_NAME = 'articles'
 
 # Selenium
 from shutil import which
@@ -62,8 +63,8 @@ DOWNLOADER_MIDDLEWARES = {
    'scrapy_selenium.SeleniumMiddleware': 800,
 }
 
-# Встроеный фильт дупликатов выключен - 'scrapy.dupefilters.BaseDupeFilter'
-DUPEFILTER_CLASS = 'default.db_dupefilter.DbDupeFilter'
+# Встроеный фильт дупликатов выключается если DUPEFILTER_CLASS = 'scrapy.dupefilters.BaseDupeFilter'
+# DUPEFILTER_CLASS = 'scrapy.dupefilters.BaseDupeFilter'
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html

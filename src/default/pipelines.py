@@ -1,10 +1,8 @@
-from collections import OrderedDict
-
-import pymongo
-from itemadapter import ItemAdapter
+from mongoengine import connect
 from pymongo.errors import ConnectionFailure, WriteError
-from scrapy.exceptions import CloseSpider
-from mongo_services import MongoDb
+from scrapy.exceptions import CloseSpider, DropItem
+
+from .items import ZenArticle
 
 
 class MongoPipeline:
@@ -12,10 +10,11 @@ class MongoPipeline:
 
     def process_item(self, item, spider):
         try:
-            MongoDb().get_collection_for_item(item_class=type(item)).insert_one(ItemAdapter(item).asdict())
+            ZenArticle(**item).save()
         except ConnectionFailure:
             print('MongoDb is not available - closing the spider')
             raise CloseSpider
         except WriteError as e:
             print('Not valid item: ', e)
+            raise DropItem
         return item
