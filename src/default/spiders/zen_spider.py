@@ -1,5 +1,5 @@
+from datetime import datetime
 from collections import OrderedDict
-from datetime import date
 
 import mongoengine
 import pymongo
@@ -19,34 +19,42 @@ class ZenSpider(scrapy.Spider):
     """Spider для статей из ЯндексДзена"""
 
     name = 'ZenSpider'
+    ITEM_CLASS = ZenArticle    # Класс, унаследованый от Mongoengine.Document, для сохранения MongoPipeline
     allowed_domains = ['zen.yandex.ru']
     start_urls = ['https://zen.yandex.ru/']
 
     LIMIT_PARSED_ARTICLES_NUM = 2
     parsed_articles = 0
 
-    @classmethod
-    def from_crawler(cls, crawler, *args, **kwargs):
-        # Устанавливаем соединение с бд и задаем алиас
-        host = crawler.settings.get('MONGO_HOST')
-        port = crawler.settings.get('MONGO_PORT')
-        db = crawler.settings.get('DEFAULT_MONGO_DB_NAME')
+    # custom_settings = {
+    #     'JOBDIR': 'default/crawls/ZenSpider',    # Директория, для хранения состояние паука (FP спаршеных ссылок)
+    # }
 
+    @staticmethod
+    def mongoengine_connect(db, host, port):
+        """Подключение к MongoDb через mongoengine - при ConnectionFailure подымает CloseSpider"""
         try:
             client = mongoengine.connect(db=db, host=host, port=port)
             client.admin.command('ping')
             print(f"Connect to {db}")
         except ConnectionFailure:
-            print(f'MongoDb is not available - closing the spider {cls}')
+            print(f'MongoDb is not available')
             raise CloseSpider
+
+    @classmethod
+    def from_crawler(cls, crawler, *args, **kwargs):
+        host = crawler.settings.get('MONGO_HOST')
+        port = crawler.settings.get('MONGO_PORT')
+        db = crawler.settings.get('DEFAULT_MONGO_DB_NAME')
+        cls.mongoengine_connect(db, host, port)
         spider = cls(*args, **kwargs)
         spider._set_crawler(crawler)
         return spider
 
     def close(self, reason):
         # Разрываем соединение когда паук закрывается
-        print(f'Mongoengine - disconnect(alias={self.db_alias})')
-        mongoengine.disconnect(alias=self.db_alias)
+        print(f'Mongoengine - disconnect(alias=defaul)')
+        mongoengine.disconnect()
 
     def parse(self, response, **kwargs):
         """Ищет на главной странице ссылки на статьи,
@@ -62,8 +70,7 @@ class ZenSpider(scrapy.Spider):
                                   callback=self.parse_article,
                                   wait_time=3,
                                   wait_until=EC.element_to_be_clickable(
-                                      (By.CSS_SELECTOR, '.left-column-button__text_short')),
-                                  flags=['dup_middleware']
+                                      (By.CSS_SELECTOR, '.left-column-button__text_short'))
                                   )
         # yield scrapy.Request(url=self.start_urls[0], callback=self.parse, dont_filter=True)
 
@@ -72,26 +79,23 @@ class ZenSpider(scrapy.Spider):
         может передавать и список <Selector>"""
         zen_loader = ZenLoader(selector=response.css('body'))
 
-        zen_loader.add_value('source', 'zen')
         zen_loader.add_css('title', 'h1::text')
         zen_loader.add_value('url', response.url)
-        #
-        # zen_loader.add_value('parsing_date', date.today())
-        # zen_loader.add_css('public_date', '.article-stats-view__item[itemprop="datePublished"]::text')
-        #
-        # zen_loader.add_css('likes', '.left-block-redesign-view button:nth-child(1) .left-column-button__text_short::text')
-        # zen_loader.add_css('comments', '.left-block-redesign-view button:nth-child(3) .left-column-button__text_short::text')
-        # zen_loader.add_css('visitors', '.article-stats-view__tip div:nth-child(1) span::text')
-        # zen_loader.add_css('reads', '.article-stats-view__tip div:nth-child(2) span::text')
-        # zen_loader.add_css('read_time', '.article-stats-view__tip div:nth-child(3) span::text')
-        # zen_loader.add_css('subscribers', '.publisher-controls__subtitle::text')
+        zen_loader.add_css('public_date', '.article-stats-view__item[itemprop="datePublished"]::text')
+        zen_loader.add_css('likes', '.left-block-redesign-view button:nth-child(1) .left-column-button__text_short::text')
+        zen_loader.add_css('comments', '.left-block-redesign-view button:nth-child(3) .left-column-button__text_short::text')
+        zen_loader.add_css('visitors', '.article-stats-view__tip div:nth-child(1) span::text')
+        zen_loader.add_css('reads', '.article-stats-view__tip div:nth-child(2) span::text')
+        zen_loader.add_css('read_time', '.article-stats-view__tip div:nth-child(3) span::text')
+        zen_loader.add_css('subscribers', '.publisher-controls__subtitle::text')
 
         # zen_loader.add_css('length', '.article-render[itemprop = "articleBody"] span::text')
         # zen_loader.add_css('num_images', '.article-render[itemprop = "articleBody"] img')
 
         item = zen_loader.load_item()
-        if self.parsed_articles >= self.LIMIT_PARSED_ARTICLES_NUM:
+        if self.LIMIT_PARSED_ARTICLES_NUM and self.parsed_articles >= self.LIMIT_PARSED_ARTICLES_NUM:
+            print(f'{self.name} LIMIT_PARSED_ARTICLES_NUM <= parsed_articles: {self.parsed_articles}')
             raise CloseSpider
         else:
             self.parsed_articles += 1
-            return item
+        return item

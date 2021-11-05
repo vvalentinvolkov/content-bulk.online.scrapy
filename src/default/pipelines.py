@@ -1,8 +1,6 @@
-from mongoengine import connect
+from mongoengine import connect, ValidationError
 from pymongo.errors import ConnectionFailure, WriteError
 from scrapy.exceptions import CloseSpider, DropItem
-
-from .items import ZenArticle
 
 
 class MongoPipeline:
@@ -10,11 +8,11 @@ class MongoPipeline:
 
     def process_item(self, item, spider):
         try:
-            ZenArticle(**item).save()
+            spider.ITEM_CLASS(**item).save()
         except ConnectionFailure:
             print('MongoDb is not available - closing the spider')
             raise CloseSpider
-        except WriteError as e:
+        except (WriteError, ValidationError) as e:
             print('Not valid item: ', e)
             raise DropItem
         return item
