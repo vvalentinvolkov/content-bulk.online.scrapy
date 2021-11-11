@@ -1,4 +1,6 @@
 #MongoDB
+import scrapy_selenium
+
 MONGO_HOST = 'localhost'
 MONGO_PORT = 27017
 DEFAULT_MONGO_DB_NAME = 'scrapy'
@@ -20,7 +22,9 @@ SPIDER_MODULES = ['default.spiders']
 NEWSPIDER_MODULE = 'default.spiders'
 
 #USER_AGENT = 'default (+http://www.yourdomain.com)'
-
+# ROTATING_PROXY_LIST = [
+#     'localhost:58200',
+# ]
 ROBOTSTXT_OBEY = True
 
 #CONCURRENT_REQUESTS = 32
@@ -42,7 +46,10 @@ SPIDER_MIDDLEWARES = {
 }
 
 DOWNLOADER_MIDDLEWARES = {
+   'rotating_proxies.middlewares.RotatingProxyMiddleware': 610,
+   'rotating_proxies.middlewares.BanDetectionMiddleware': 620,
    'scrapy_selenium.SeleniumMiddleware': 800,
+
 }
 
 #EXTENSIONS = {

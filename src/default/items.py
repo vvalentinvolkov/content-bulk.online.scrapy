@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from mongoengine import Document, StringField, IntField, DateField, URLField, DateTimeField
+from mongoengine import Document, StringField, IntField, DateField, URLField, DateTimeField, BooleanField
 
 from .settings import DEFAULT_MONGO_COLLECTION_NAME, DEFAULT_MONGO_DB_NAME
 import scrapy
@@ -16,13 +16,15 @@ class CommonArticleItem(Document):
     visitors = IntField(required=True)
     read_time = IntField(required=True)
     subscribers = IntField(required=True)
-    comments = IntField(required=True)
+    comments = IntField(required=True, default=0)
     parsing_date = DateField(required=True, default=datetime.utcnow())
     public_date = DateField(required=True)
-    # length = IntField(required=True)
-    # num_images = IntField(required=True)
+    length = IntField(required=True)
+    num_images = IntField(required=True, default=0)
+    num_video = IntField(required=True, default=0)
+    with_form = BooleanField(required=True, default=False)
 
-    meta = {'allow_inheritance': True}
+    meta = {'abstract': True}
 
 
 class ZenArticle(CommonArticleItem):

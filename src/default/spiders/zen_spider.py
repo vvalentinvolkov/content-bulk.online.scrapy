@@ -1,8 +1,4 @@
-from datetime import datetime
-from collections import OrderedDict
-
 import mongoengine
-import pymongo
 import scrapy
 from pymongo.errors import ConnectionFailure
 from scrapy.exceptions import CloseSpider
@@ -23,9 +19,10 @@ class ZenSpider(scrapy.Spider):
     allowed_domains = ['zen.yandex.ru']
     start_urls = ['https://zen.yandex.ru/']
 
-    LIMIT_PARSED_ARTICLES_NUM = 2
-    parsed_articles = 0
+    LIMIT_CRAWLED_ARTICLES = 10
+    crawled_articles = 0
 
+    # JOBDIR необходима для проверки на дипликаты уже паршеных ссылок (из бд)
     # custom_settings = {
     #     'JOBDIR': 'default/crawls/ZenSpider',    # Директория, для хранения состояние паука (FP спаршеных ссылок)
     # }
@@ -53,7 +50,7 @@ class ZenSpider(scrapy.Spider):
 
     def close(self, reason):
         # Разрываем соединение когда паук закрывается
-        print(f'Mongoengine - disconnect(alias=defaul)')
+        print(f'Mongoengine - disconnect(alias=default)')
         mongoengine.disconnect()
 
     def parse(self, response, **kwargs):
@@ -68,9 +65,10 @@ class ZenSpider(scrapy.Spider):
                      'https://zen.yandex.ru/media/automaniac/razobral-dvigatel-lady-vesty-18-l-vaz-21179-pokazyvaiu-iz-chego-sdelan-etot-motor-i-est-li-v-nem-rossiiskie-komplektuiuscie-61519246bd215b71fd3c6b26']:
             yield SeleniumRequest(url=link,
                                   callback=self.parse_article,
-                                  wait_time=3,
+                                  wait_time=4,
                                   wait_until=EC.element_to_be_clickable(
-                                      (By.CSS_SELECTOR, '.left-column-button__text_short'))
+                                      (By.CSS_SELECTOR, '.left-column-button__text_short')),
+                                  meta={"proxy": "localhost:58200"}
                                   )
         # yield scrapy.Request(url=self.start_urls[0], callback=self.parse, dont_filter=True)
 
@@ -88,14 +86,16 @@ class ZenSpider(scrapy.Spider):
         zen_loader.add_css('reads', '.article-stats-view__tip div:nth-child(2) span::text')
         zen_loader.add_css('read_time', '.article-stats-view__tip div:nth-child(3) span::text')
         zen_loader.add_css('subscribers', '.publisher-controls__subtitle::text')
-
-        # zen_loader.add_css('length', '.article-render[itemprop = "articleBody"] span::text')
-        # zen_loader.add_css('num_images', '.article-render[itemprop = "articleBody"] img')
+        zen_loader.add_css('length', '.article-render[itemprop = "articleBody"] > p *::text')
+        zen_loader.add_css('num_images', '.article-render[itemprop = "articleBody"] .article-image-item__image')
+        zen_loader.add_css('num_video', '.article-render[itemprop = "articleBody"] .zen-video-embed')
+        zen_loader.add_css('with_form', '.article-render[itemprop = "articleBody"] .yandex-forms-embed')
 
         item = zen_loader.load_item()
-        if self.LIMIT_PARSED_ARTICLES_NUM and self.parsed_articles >= self.LIMIT_PARSED_ARTICLES_NUM:
-            print(f'{self.name} LIMIT_PARSED_ARTICLES_NUM <= parsed_articles: {self.parsed_articles}')
+        if self.LIMIT_CRAWLED_ARTICLES and self.crawled_articles >= self.LIMIT_CRAWLED_ARTICLES:
+            print(f'{self.name} LIMIT_PARSED_ARTICLES_NUM <= parsed_articles: {self.crawled_articles}')
             raise CloseSpider
         else:
-            self.parsed_articles += 1
-        return item
+            self.crawled_articles += 1
+        print(item)
+        # return item

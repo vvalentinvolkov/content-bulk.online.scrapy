@@ -1,5 +1,5 @@
-from mongoengine import connect, ValidationError
-from pymongo.errors import ConnectionFailure, WriteError
+from mongoengine import connect, ValidationError, NotUniqueError
+from pymongo.errors import ConnectionFailure, WriteError, DuplicateKeyError
 from scrapy.exceptions import CloseSpider, DropItem
 
 
@@ -13,6 +13,9 @@ class MongoPipeline:
             print('MongoDb is not available - closing the spider')
             raise CloseSpider
         except (WriteError, ValidationError) as e:
-            print('Not valid item: ', e)
+            print('Not valid item: ', e, item.get['url'][:50])
             raise DropItem
+        except (NotUniqueError, DuplicateKeyError):
+            print('Not unique url')
+            raise CloseSpider
         return item

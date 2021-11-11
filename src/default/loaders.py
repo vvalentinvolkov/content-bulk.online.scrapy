@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 
 from itemloaders import ItemLoader
-from itemloaders.processors import Compose, TakeFirst
+from itemloaders.processors import Compose, TakeFirst, Join, Identity
 from scrapy.exceptions import DropItem
 
 MONTH_NUMBERS = {
@@ -58,7 +58,9 @@ def _get_public_date(value: str) -> datetime:
 
 def _get_likes(value: str) -> int:
     parsed_value = re.search(r'^(?P<num>[\d.]*)\s(?P<unit>(:?k|тыс))*', value.lower())
-    if parsed_value['unit'] and ('k' in parsed_value['unit'] or 'тыс' in parsed_value['unit']):
+    if not parsed_value:
+        return 0
+    elif parsed_value['unit'] and ('k' in parsed_value['unit'] or 'тыс' in parsed_value['unit']):
         return int(float(parsed_value['num'])*1000)
     else:
         return int(parsed_value['num'])
@@ -66,6 +68,8 @@ def _get_likes(value: str) -> int:
 
 def _get_comments(value: str) -> int:
     parsed_value = re.search(r'^(?P<num>[\d.]*)\s*(?P<unit>(:?k|тыс))*', value.lower())
+    if not parsed_value:
+        return 0
     if parsed_value['unit'] and ('k' in parsed_value['unit'] or 'тыс' in parsed_value['unit']):
         return int(float(parsed_value['num'])*1000)
     else:
@@ -74,12 +78,16 @@ def _get_comments(value: str) -> int:
 
 def _get_subscribers(value: str) -> int:
     parsed_value = re.search(r'^(?P<num>\d+(:?\s\d*)*(?=\s))', value.lower())
+    if not parsed_value:
+        return 0
     return int(parsed_value['num'].replace(' ', ''))
 
 
 def _get_visitors(value: str) -> int:
     parsed_value = re.search(r'^(?P<num>[\d.]*)(?P<unit>(:?k|\sтыс))*', value.lower())
-    if parsed_value['unit'] and ('k' in parsed_value['unit'] or 'тыс' in parsed_value['unit']):
+    if not parsed_value:
+        return 0
+    elif parsed_value['unit'] and ('k' in parsed_value['unit'] or 'тыс' in parsed_value['unit']):
         return int(float(parsed_value['num'])*1000)
     else:
         return int(parsed_value['num'])
@@ -87,7 +95,9 @@ def _get_visitors(value: str) -> int:
 
 def _get_reads(value: str) -> int:
     parsed_value = re.search(r'^(?P<num>[\d.]*)(?P<unit>(:?k|\sтыс))*', value.lower())
-    if parsed_value['unit'] and ('k' in parsed_value['unit'] or 'тыс' in parsed_value['unit']):
+    if not parsed_value:
+        return 0
+    elif parsed_value['unit'] and ('k' in parsed_value['unit'] or 'тыс' in parsed_value['unit']):
         return int(float(parsed_value['num'])*1000)
     else:
         return int(parsed_value['num'])
@@ -95,11 +105,25 @@ def _get_reads(value: str) -> int:
 
 def _get_read_time(value: str) -> int:
     parsed_value = re.search(r'^(?P<num>[\d.]*)\s*(?P<unit>.*)', value.lower().replace(',', '.'))
-    if 'second' in parsed_value['unit'] or 'секунд' in parsed_value['unit']:
+    if not parsed_value:
+        return 0
+    elif 'second' in parsed_value['unit'] or 'секунд' in parsed_value['unit']:
         return int(parsed_value['num'])
     if 'minut' in parsed_value['unit'] or 'минут' in parsed_value['unit']:
         return int(float(parsed_value['num'])*60)
     raise DropItem
+
+
+def _get_num_images(value: list) -> int:
+    return len(value)
+
+
+def _get_num_video(value: list) -> int:
+    return len(value)
+
+
+def _get_with_form(value: str) -> bool:
+    return bool(value)
 
 
 class ZenLoader(ItemLoader):
@@ -115,3 +139,7 @@ class ZenLoader(ItemLoader):
     visitors_out = Compose(TakeFirst(), _get_visitors)
     reads_out = Compose(TakeFirst(), _get_reads)
     read_time_out = Compose(TakeFirst(), _get_read_time)
+    length_out = Compose(Join(), lambda v: len(v))
+    num_images_out = _get_num_images
+    num_video_out = _get_num_video
+    with_form_out = Compose(TakeFirst(), _get_with_form)
