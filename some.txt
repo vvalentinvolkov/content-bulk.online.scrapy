@@ -1,9 +1,0 @@
-{'title': 'Разобрал двигатель Лады Весты 1,8 л. ВАЗ 21179: Показываю, из чего сделан этот мотор, и есть ли в нём российские комплектующие',
-'url': 'https://zen.yandex.ru/media/automaniac/razobral-dvigatel-lady-vesty-18-l-vaz-21179-pokazyvaiu-iz-chego-sdelan-etot-motor-i-est-li-v-nem-rossiiskie-komplektuiuscie-61519246bd215b71fd3c6b26',
-'public_date': datetime.datetime(2021, 9, 27, 0, 0),
-'likes': '1 тыс.',
-'comments': '401',
-'visitors': '83 тыс. просмотров публикации',
-'reads': '66 тыс. прочитали до конца',
-'read_time': '4 минуты — среднее время чтения',
-'subscribers': '133 430 подписчиков'}

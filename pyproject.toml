@@ -12,6 +12,7 @@ scrapy-splash = "^0.8.0"
 pymongo = "^3.12.1"
 mongoengine = "^0.23.1"
 scrapy-rotating-proxies = "^0.6.2"
+simplejson = "^3.17.5"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"

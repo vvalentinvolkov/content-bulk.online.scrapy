@@ -1,22 +1,10 @@
 #MongoDB
-import scrapy_selenium
 
 MONGO_HOST = 'localhost'
 MONGO_PORT = 27017
 DEFAULT_MONGO_DB_NAME = 'scrapy'
 DEFAULT_MONGO_COLLECTION_NAME = 'articles'
 
-# Selenium
-from shutil import which
-import logging
-from selenium.webdriver.remote.remote_connection import LOGGER
-
-SELENIUM_DRIVER_NAME = 'chrome'
-SELENIUM_DRIVER_EXECUTABLE_PATH = which('chromedriver')
-SELENIUM_DRIVER_ARGUMENTS = ['-headless']
-LOGGER.setLevel(logging.WARNING)
-
-BOT_NAME = 'default'
 
 SPIDER_MODULES = ['default.spiders']
 NEWSPIDER_MODULE = 'default.spiders'
@@ -25,7 +13,7 @@ NEWSPIDER_MODULE = 'default.spiders'
 # ROTATING_PROXY_LIST = [
 #     'localhost:58200',
 # ]
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
 
 #CONCURRENT_REQUESTS = 32
 
@@ -43,12 +31,14 @@ DOWNLOAD_DELAY = 3
 
 SPIDER_MIDDLEWARES = {
    'scrapy.spidermiddlewares.offsite.OffsiteMiddleware': 100,
+   'scrapy_splash.SplashDeduplicateArgsMiddleware': 200,
+
 }
 
 DOWNLOADER_MIDDLEWARES = {
-   'rotating_proxies.middlewares.RotatingProxyMiddleware': 610,
-   'rotating_proxies.middlewares.BanDetectionMiddleware': 620,
-   'scrapy_selenium.SeleniumMiddleware': 800,
+   'scrapy_splash.SplashCookiesMiddleware': 723,
+   'scrapy_splash.SplashMiddleware': 725,
+   'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
 
 }
 
@@ -59,6 +49,10 @@ DOWNLOADER_MIDDLEWARES = {
 ITEM_PIPELINES = {
    'default.pipelines.MongoPipeline': 100,
 }
+
+DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter'
+
+HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
 
 #AUTOTHROTTLE_ENABLED = True
 #AUTOTHROTTLE_START_DELAY = 5

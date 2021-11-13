@@ -1,8 +1,12 @@
+import re
+
 import mongoengine
 import scrapy
 from pymongo.errors import ConnectionFailure
 from scrapy.exceptions import CloseSpider
-from scrapy_selenium import SeleniumRequest
+from scrapy.http import TextResponse
+from scrapy_splash import SplashRequest
+import simplejson as json
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -15,9 +19,9 @@ class ZenSpider(scrapy.Spider):
     """Spider для статей из ЯндексДзена"""
 
     name = 'ZenSpider'
-    ITEM_CLASS = ZenArticle    # Класс, унаследованый от Mongoengine.Document, для сохранения MongoPipeline
+    ITEM_CLASS = ZenArticle  # Класс, унаследованый от Mongoengine.Document, для сохранения MongoPipeline
     allowed_domains = ['zen.yandex.ru']
-    start_urls = ['https://zen.yandex.ru/']
+    start_urls = ['https://zen.yandex.ru/api/v3/launcher/export?country_code=ru&clid=300']
 
     LIMIT_CRAWLED_ARTICLES = 10
     crawled_articles = 0
@@ -43,7 +47,7 @@ class ZenSpider(scrapy.Spider):
         host = crawler.settings.get('MONGO_HOST')
         port = crawler.settings.get('MONGO_PORT')
         db = crawler.settings.get('DEFAULT_MONGO_DB_NAME')
-        cls.mongoengine_connect(db, host, port)
+        # cls.mongoengine_connect(db, host, port)
         spider = cls(*args, **kwargs)
         spider._set_crawler(crawler)
         return spider
@@ -53,39 +57,83 @@ class ZenSpider(scrapy.Spider):
         print(f'Mongoengine - disconnect(alias=default)')
         mongoengine.disconnect()
 
-    def parse(self, response, **kwargs):
-        """Ищет на главной странице ссылки на статьи,
-        игнорируя видео и ссылки на стороние сайты (см. self.allowed_domains) """
-        link_articles_from_main = (a.attrib['href'] for a in
-                                   response.css('.feed__row._items-count_1 .card-image-one-column-view__content > a'))
+    def parse(self, response: TextResponse, **kwargs):
+        """TODO:"""
+        feed_json = json.load(response.text)
 
-        # for link in link_articles_from_main:
-        for link in ['https://zen.yandex.ru/media/automaniac/razobral-dvigatel-lady-vesty-18-l-vaz-21179-pokazyvaiu-iz-chego-sdelan-etot-motor-i-est-li-v-nem-rossiiskie-komplektuiuscie-61519246bd215b71fd3c6b26',
-                     'https://zen.yandex.ru/media/zenwhatsnew/klast-ili-lojit-proidite-korotkii-test-na-gramotnost-i-uznaite-chto-u-vas-po-russkomu-iazyku-na-samom-dele-61370e227ce5df2042c41fe1',
-                     'https://zen.yandex.ru/media/automaniac/razobral-dvigatel-lady-vesty-18-l-vaz-21179-pokazyvaiu-iz-chego-sdelan-etot-motor-i-est-li-v-nem-rossiiskie-komplektuiuscie-61519246bd215b71fd3c6b26']:
-            yield SeleniumRequest(url=link,
-                                  callback=self.parse_article,
-                                  wait_time=4,
-                                  wait_until=EC.element_to_be_clickable(
-                                      (By.CSS_SELECTOR, '.left-column-button__text_short')),
-                                  meta={"proxy": "localhost:58200"}
-                                  )
-        # yield scrapy.Request(url=self.start_urls[0], callback=self.parse, dont_filter=True)
+        for item in feed_json['items']:
+            try:
+                is_verified = item['source'].get('is_verified')
+                is_video = 'video' in item
+                if not is_verified and not is_video:
+                    cb_kwargs = {'title': item['title'],
+                                 'article_link': item['link'],
+                                 'publication_date': item['publication_date']
+                                 }
+                else:
+                    print('Is video or verified')
+                    continue
+            except KeyError as e:
+                print('Cant get something from feed_json', e)
+            else:
+                yield scrapy.Request(url=item['channel_link'], callback=self.parse_channel, dont_filter=True,
+                                     cb_kwargs=cb_kwargs)
+
+        yield scrapy.Request(url=self.start_urls[0], callback=self.parse, dont_filter=True)
+    # TODO: Что надо вернуть мб ошибку в  error_cb
+    def parse_channel(self, response: TextResponse, **kwargs):
+        channel_json = json.load(response.text)
+        try:
+            source = channel_json['channel']['source']
+
+            kwargs['subscribers'] = source['subscribers']
+            kwargs['audience'] = source['audience']
+
+            publisher_id = source['publisher_id']
+            document_id = re.match(r'.*-(\w*)', kwargs['article_link'])[1]
+            top_comments_link = 'https://zen.yandex.ru/api/comments/top-comments?' \
+                                'withUser=true&retryNum=0&manualRetry=false&commentId=0&withProfile=true' \
+                                f'&{publisher_id}=601c6ae930694e141a19391d' \
+                                f'&{document_id}=native%3A612c02ed4b943d646eed8032&commentCount=100'
+        except KeyError as e:
+            print('Cant get something from channel_json', e)
+            return None
+        else:
+            scrapy.Request(url=top_comments_link, callback=self.parse_top_comments,
+                           cb_kwargs=kwargs)
+
+    def parse_top_comments(self, response: TextResponse, **kwargs):
+        top_comments_json = json.load(response.text)
+        try:
+            meta = top_comments_json['meta']
+            is_visible_comments = meta.get('visibleComments') == 'visible'
+            if is_visible_comments:
+                kwargs['likes'] = meta['publicationLikeCount']
+                kwargs['comments'] = meta['commentsCount'] + meta['answersCount']
+            else:
+                return None
+        except KeyError as e:
+            print('Cant get something from top_comments_json', e)
+            return None
+        else:
+            yield scrapy.Request(url=kwargs['article_link'], callback=self.parse_article,
+                                 cb_kwargs=kwargs)
 
     def parse_article(self, response, **kwargs):
         """Ищет инфу на странице статьи и передает значение из параметра "selector" в виде <Selector> -
         может передавать и список <Selector>"""
-        zen_loader = ZenLoader(selector=response.css('body'))
+        har = response.data['har']
+        zen_loader = ZenLoader(selector=response.data['html'].css('body'))
 
-        zen_loader.add_css('title', 'h1::text')
+        # zen_loader.add_css('title', 'h1::text')
         zen_loader.add_value('url', response.url)
-        zen_loader.add_css('public_date', '.article-stats-view__item[itemprop="datePublished"]::text')
-        zen_loader.add_css('likes', '.left-block-redesign-view button:nth-child(1) .left-column-button__text_short::text')
-        zen_loader.add_css('comments', '.left-block-redesign-view button:nth-child(3) .left-column-button__text_short::text')
+        # zen_loader.add_css('public_date', '.article-stats-view__item[itemprop="datePublished"]::text')
+        # zen_loader.add_css('likes', '.left-block-redesign-view button:nth-child(1) .left-column-button__text_short::text')
+        # zen_loader.add_css('comments', '.left-block-redesign-view button:nth-child(3) .left-column-button__text_short::text')
         zen_loader.add_css('visitors', '.article-stats-view__tip div:nth-child(1) span::text')
         zen_loader.add_css('reads', '.article-stats-view__tip div:nth-child(2) span::text')
         zen_loader.add_css('read_time', '.article-stats-view__tip div:nth-child(3) span::text')
-        zen_loader.add_css('subscribers', '.publisher-controls__subtitle::text')
+        # zen_loader.add_css('subscribers', '.publisher-controls__subtitle::text')
         zen_loader.add_css('length', '.article-render[itemprop = "articleBody"] > p *::text')
         zen_loader.add_css('num_images', '.article-render[itemprop = "articleBody"] .article-image-item__image')
         zen_loader.add_css('num_video', '.article-render[itemprop = "articleBody"] .zen-video-embed')
