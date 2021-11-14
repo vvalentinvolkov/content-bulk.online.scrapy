@@ -1,21 +1,17 @@
 import re
 
 import mongoengine
-import scrapy
+from scrapy import http, Spider
 from pymongo.errors import ConnectionFailure
 from scrapy.exceptions import CloseSpider
 from scrapy.http import TextResponse
-from scrapy_splash import SplashRequest
-import simplejson as json
+from collections import Counter
 
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-
+from .. import css_handler
 from ..items import ZenArticle
-from ..loaders import ZenLoader
 
 
-class ZenSpider(scrapy.Spider):
+class ZenSpider(Spider):
     """Spider для статей из ЯндексДзена"""
 
     name = 'ZenSpider'
@@ -23,13 +19,13 @@ class ZenSpider(scrapy.Spider):
     allowed_domains = ['zen.yandex.ru']
     start_urls = ['https://zen.yandex.ru/api/v3/launcher/export?country_code=ru&clid=300']
 
-    LIMIT_CRAWLED_ARTICLES = 10
-    crawled_articles = 0
+    # LIMIT_CRAWLED_ARTICLES = 20
+    # crawled_articles = 0
 
     # JOBDIR необходима для проверки на дипликаты уже паршеных ссылок (из бд)
-    # custom_settings = {
-    #     'JOBDIR': 'default/crawls/ZenSpider',    # Директория, для хранения состояние паука (FP спаршеных ссылок)
-    # }
+    custom_settings = {
+        'JOBDIR': 'default/crawls/ZenSpider',    # Директория, для хранения состояние паука (FP спаршеных ссылок)
+    }
 
     @staticmethod
     def mongoengine_connect(db, host, port):
@@ -47,7 +43,7 @@ class ZenSpider(scrapy.Spider):
         host = crawler.settings.get('MONGO_HOST')
         port = crawler.settings.get('MONGO_PORT')
         db = crawler.settings.get('DEFAULT_MONGO_DB_NAME')
-        # cls.mongoengine_connect(db, host, port)
+        cls.mongoengine_connect(db, host, port)
         spider = cls(*args, **kwargs)
         spider._set_crawler(crawler)
         return spider
@@ -59,91 +55,89 @@ class ZenSpider(scrapy.Spider):
 
     def parse(self, response: TextResponse, **kwargs):
         """TODO:"""
-        feed_json = json.load(response.text)
-
+        feed_json = response.json()
         for item in feed_json['items']:
             try:
                 is_verified = item['source'].get('is_verified')
                 is_video = 'video' in item
                 if not is_verified and not is_video:
-                    cb_kwargs = {'title': item['title'],
-                                 'article_link': item['link'],
-                                 'publication_date': item['publication_date']
-                                 }
+                    kwargs = {'title': item['title'],
+                              'link': item['link'],
+                              'public_date': item['publication_date']
+                             }
                 else:
-                    print('Is video or verified')
                     continue
             except KeyError as e:
-                print('Cant get something from feed_json', e)
+                print('Cant get from feed_json item - ', e)
             else:
-                yield scrapy.Request(url=item['channel_link'], callback=self.parse_channel, dont_filter=True,
-                                     cb_kwargs=cb_kwargs)
+                yield http.Request(url=item['channel_link'], callback=self.parse_channel, dont_filter=True,
+                                   cb_kwargs=kwargs)
 
-        yield scrapy.Request(url=self.start_urls[0], callback=self.parse, dont_filter=True)
-    # TODO: Что надо вернуть мб ошибку в  error_cb
+        yield http.Request(url=self.start_urls[0], callback=self.parse, dont_filter=True)
+
     def parse_channel(self, response: TextResponse, **kwargs):
-        channel_json = json.load(response.text)
+        try:
+            document_id = re.match(r'.*-(\w*)', kwargs['link'])[1]
+        except TypeError:
+            print('Not zen article link - ', kwargs['link'])
+            return None
+        channel_json = response.json()
         try:
             source = channel_json['channel']['source']
-
             kwargs['subscribers'] = source['subscribers']
             kwargs['audience'] = source['audience']
-
             publisher_id = source['publisher_id']
-            document_id = re.match(r'.*-(\w*)', kwargs['article_link'])[1]
             top_comments_link = 'https://zen.yandex.ru/api/comments/top-comments?' \
                                 'withUser=true&retryNum=0&manualRetry=false&commentId=0&withProfile=true' \
-                                f'&{publisher_id}=601c6ae930694e141a19391d' \
-                                f'&{document_id}=native%3A612c02ed4b943d646eed8032&commentCount=100'
+                                f'&publisher_id={publisher_id}' \
+                                f'&document_id=native%3A{document_id}' \
+                                '&commentCount=100'
         except KeyError as e:
-            print('Cant get something from channel_json', e)
+            print('Cant get from channel_json - ', e)
             return None
-        else:
-            scrapy.Request(url=top_comments_link, callback=self.parse_top_comments,
-                           cb_kwargs=kwargs)
+        return http.Request(url=top_comments_link, callback=self.parse_top_comments,
+                            cb_kwargs=kwargs)
 
     def parse_top_comments(self, response: TextResponse, **kwargs):
-        top_comments_json = json.load(response.text)
+        top_comments_json = response.json()
         try:
             meta = top_comments_json['meta']
             is_visible_comments = meta.get('visibleComments') == 'visible'
             if is_visible_comments:
-                kwargs['likes'] = meta['publicationLikeCount']
+                kwargs['likes'] = top_comments_json['publicationLikeCount']
                 kwargs['comments'] = meta['commentsCount'] + meta['answersCount']
+                counted_interests = Counter()
+                counted_interests.update((interest['title'] for profile in top_comments_json['profiles']
+                                          for interest in profile['interests']))
+                kwargs['interests'] = [interest for interest, _ in counted_interests.most_common(5)]
             else:
                 return None
         except KeyError as e:
-            print('Cant get something from top_comments_json', e)
+            print('Cant get from top_comments_json - ', e)
             return None
-        else:
-            yield scrapy.Request(url=kwargs['article_link'], callback=self.parse_article,
-                                 cb_kwargs=kwargs)
+        return http.Request(url=kwargs['link'], callback=self.parse_article,
+                            cb_kwargs=kwargs)
 
     def parse_article(self, response, **kwargs):
         """Ищет инфу на странице статьи и передает значение из параметра "selector" в виде <Selector> -
         может передавать и список <Selector>"""
-        har = response.data['har']
-        zen_loader = ZenLoader(selector=response.data['html'].css('body'))
 
-        # zen_loader.add_css('title', 'h1::text')
-        zen_loader.add_value('url', response.url)
-        # zen_loader.add_css('public_date', '.article-stats-view__item[itemprop="datePublished"]::text')
-        # zen_loader.add_css('likes', '.left-block-redesign-view button:nth-child(1) .left-column-button__text_short::text')
-        # zen_loader.add_css('comments', '.left-block-redesign-view button:nth-child(3) .left-column-button__text_short::text')
-        zen_loader.add_css('visitors', '.article-stats-view__tip div:nth-child(1) span::text')
-        zen_loader.add_css('reads', '.article-stats-view__tip div:nth-child(2) span::text')
-        zen_loader.add_css('read_time', '.article-stats-view__tip div:nth-child(3) span::text')
-        # zen_loader.add_css('subscribers', '.publisher-controls__subtitle::text')
-        zen_loader.add_css('length', '.article-render[itemprop = "articleBody"] > p *::text')
-        zen_loader.add_css('num_images', '.article-render[itemprop = "articleBody"] .article-image-item__image')
-        zen_loader.add_css('num_video', '.article-render[itemprop = "articleBody"] .zen-video-embed')
-        zen_loader.add_css('with_form', '.article-render[itemprop = "articleBody"] .yandex-forms-embed')
+        kwargs['visitors'] = css_handler.get_visitors(response)
+        kwargs['reads'] = css_handler.get_reads(response)
+        kwargs['read_time'] = css_handler.get_read_time(response)
+        kwargs['length'] = css_handler.get_length(response)
+        kwargs['num_images'] = css_handler.get_num_images(response)
+        kwargs['num_video'] = css_handler.get_num_video(response)
+        kwargs['with_form'] = css_handler.get_with_form(response)
 
-        item = zen_loader.load_item()
-        if self.LIMIT_CRAWLED_ARTICLES and self.crawled_articles >= self.LIMIT_CRAWLED_ARTICLES:
-            print(f'{self.name} LIMIT_PARSED_ARTICLES_NUM <= parsed_articles: {self.crawled_articles}')
-            raise CloseSpider
-        else:
-            self.crawled_articles += 1
-        print(item)
-        # return item
+        # if self.LIMIT_CRAWLED_ARTICLES and self.crawled_articles >= self.LIMIT_CRAWLED_ARTICLES:
+        #     print(f'{self.name} LIMIT_PARSED_ARTICLES_NUM <= parsed_articles: {self.crawled_articles}')
+        #     raise CloseSpider
+        # else:
+        #     self.crawled_articles += 1
+        #
+        # print('<--------------------------------->')
+        # print(self.crawled_articles)
+        # print('<--------------------------------->')
+
+        return kwargs
