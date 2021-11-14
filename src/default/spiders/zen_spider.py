@@ -19,9 +19,6 @@ class ZenSpider(Spider):
     allowed_domains = ['zen.yandex.ru']
     start_urls = ['https://zen.yandex.ru/api/v3/launcher/export?country_code=ru&clid=300']
 
-    # LIMIT_CRAWLED_ARTICLES = 20
-    # crawled_articles = 0
-
     # JOBDIR необходима для проверки на дипликаты уже паршеных ссылок (из бд)
     custom_settings = {
         'JOBDIR': 'default/crawls/ZenSpider',    # Директория, для хранения состояние паука (FP спаршеных ссылок)
@@ -49,12 +46,13 @@ class ZenSpider(Spider):
         return spider
 
     def close(self, reason):
-        # Разрываем соединение когда паук закрывается
+        # Разрыв соединение когда паук закрывается
         print(f'Mongoengine - disconnect(alias=default)')
         mongoengine.disconnect()
 
     def parse(self, response: TextResponse, **kwargs):
-        """TODO:"""
+        """Получение фида главной страницы - в случае ошибки или не получения какой либо информации
+        все последующие запросы возвращают None"""
         feed_json = response.json()
         for item in feed_json['items']:
             try:
@@ -76,6 +74,7 @@ class ZenSpider(Spider):
         yield http.Request(url=self.start_urls[0], callback=self.parse, dont_filter=True)
 
     def parse_channel(self, response: TextResponse, **kwargs):
+        """Получение данных по каналу и формирование ссылки на динамические данные статьи (top_comments)"""
         try:
             document_id = re.match(r'.*-(\w*)', kwargs['link'])[1]
         except TypeError:
@@ -99,6 +98,7 @@ class ZenSpider(Spider):
                             cb_kwargs=kwargs)
 
     def parse_top_comments(self, response: TextResponse, **kwargs):
+        """Получение динамических данных статьи и интересов из комментариев"""
         top_comments_json = response.json()
         try:
             meta = top_comments_json['meta']
@@ -119,9 +119,7 @@ class ZenSpider(Spider):
                             cb_kwargs=kwargs)
 
     def parse_article(self, response, **kwargs):
-        """Ищет инфу на странице статьи и передает значение из параметра "selector" в виде <Selector> -
-        может передавать и список <Selector>"""
-
+        """Получение данных самой статьи - селекторы содержат функции-обработчики в css_handler"""
         kwargs['visitors'] = css_handler.get_visitors(response)
         kwargs['reads'] = css_handler.get_reads(response)
         kwargs['read_time'] = css_handler.get_read_time(response)
@@ -129,15 +127,5 @@ class ZenSpider(Spider):
         kwargs['num_images'] = css_handler.get_num_images(response)
         kwargs['num_video'] = css_handler.get_num_video(response)
         kwargs['with_form'] = css_handler.get_with_form(response)
-
-        # if self.LIMIT_CRAWLED_ARTICLES and self.crawled_articles >= self.LIMIT_CRAWLED_ARTICLES:
-        #     print(f'{self.name} LIMIT_PARSED_ARTICLES_NUM <= parsed_articles: {self.crawled_articles}')
-        #     raise CloseSpider
-        # else:
-        #     self.crawled_articles += 1
-        #
-        # print('<--------------------------------->')
-        # print(self.crawled_articles)
-        # print('<--------------------------------->')
 
         return kwargs

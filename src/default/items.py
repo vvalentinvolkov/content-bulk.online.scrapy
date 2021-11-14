@@ -2,8 +2,7 @@ from datetime import datetime
 
 from mongoengine import Document, StringField, IntField, URLField, BooleanField, ListField
 
-from .settings import DEFAULT_MONGO_COLLECTION_NAME, DEFAULT_MONGO_DB_NAME
-import scrapy
+from .settings import DEFAULT_MONGO_COLLECTION_NAME
 
 
 class CommonArticleItem(Document):

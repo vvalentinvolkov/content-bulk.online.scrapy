@@ -6,7 +6,8 @@ from scrapy.exceptions import CloseSpider, DropItem
 class MongoPipeline:
     """Сохранение элементов в базу даных mongoDB"""
 
-    def process_item(self, item, spider):
+    def process_item(self, item: dict, spider):
+        """Вызывается для каждого item"""
         try:
             spider.ITEM_CLASS(**item).save()
         except ConnectionFailure:
