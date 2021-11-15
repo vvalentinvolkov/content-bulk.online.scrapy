@@ -1,3 +1,4 @@
+from datetime import datetime
 import re
 
 import mongoengine
@@ -40,7 +41,7 @@ class ZenSpider(Spider):
         host = crawler.settings.get('MONGO_HOST')
         port = crawler.settings.get('MONGO_PORT')
         db = crawler.settings.get('DEFAULT_MONGO_DB_NAME')
-        cls.mongoengine_connect(db, host, port)
+        # cls.mongoengine_connect(db, host, port)
         spider = cls(*args, **kwargs)
         spider._set_crawler(crawler)
         return spider
@@ -52,16 +53,21 @@ class ZenSpider(Spider):
 
     def parse(self, response: TextResponse, **kwargs):
         """Получение фида главной страницы - в случае ошибки или не получения какой либо информации
-        все последующие запросы возвращают None"""
+        все последующие запросы возвращают None.
+        Проверяем если item это видео или источник верефицирован или публикация старше 6 месяяцев - следующий item
+        Все собираемые данных добавляются в kwargs и передаются в cb"""
         feed_json = response.json()
         for item in feed_json['items']:
             try:
                 is_verified = item['source'].get('is_verified')
                 is_video = 'video' in item
-                if not is_verified and not is_video:
+                public_date = int(item['publication_date'])
+                time_public_to_parse = int(datetime.utcnow().timestamp()) - public_date
+                if not is_verified and not is_video and time_public_to_parse < 16070400:  # 16070400 сек ~ 6 мес.
                     kwargs = {'title': item['title'],
                               'link': item['link'],
-                              'public_date': item['publication_date']
+                              'public_date': public_date,
+                              'time_public_to_parse': time_public_to_parse,
                              }
                 else:
                     continue
@@ -86,6 +92,7 @@ class ZenSpider(Spider):
             kwargs['subscribers'] = source['subscribers']
             kwargs['audience'] = source['audience']
             publisher_id = source['publisher_id']
+            # Ссылка из api зена по доп инфу по статье
             top_comments_link = 'https://zen.yandex.ru/api/comments/top-comments?' \
                                 'withUser=true&retryNum=0&manualRetry=false&commentId=0&withProfile=true' \
                                 f'&publisher_id={publisher_id}' \
@@ -119,7 +126,8 @@ class ZenSpider(Spider):
                             cb_kwargs=kwargs)
 
     def parse_article(self, response, **kwargs):
-        """Получение данных самой статьи - селекторы содержат функции-обработчики в css_handler"""
+        """Получение данных самой статьи - селекторы содержат функции-обработчики в css_handler.
+        Отдает в pipeline kwargs, которые содержит все данные полученые в пред запросах"""
         kwargs['visitors'] = css_handler.get_visitors(response)
         kwargs['reads'] = css_handler.get_reads(response)
         kwargs['read_time'] = css_handler.get_read_time(response)
@@ -127,5 +135,5 @@ class ZenSpider(Spider):
         kwargs['num_images'] = css_handler.get_num_images(response)
         kwargs['num_video'] = css_handler.get_num_video(response)
         kwargs['with_form'] = css_handler.get_with_form(response)
-
-        return kwargs
+        print(kwargs)
+        # return kwargs

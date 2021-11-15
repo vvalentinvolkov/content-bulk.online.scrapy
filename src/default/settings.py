@@ -33,7 +33,7 @@ EXTENSIONS = {
    'scrapy.extensions.closespider.CloseSpider': 100
 }
 
-CLOSESPIDER_ITEMCOUNT = 20   # Ограничение по колличеству item вовзращенных из функций *_parse
+CLOSESPIDER_ITEMCOUNT = 3   # Ограничение по колличеству item вовзращенных из функций *_parse
 CLOSESPIDER_ERRORCOUNT = 10   # Ограничение по колличеству поднятых встроенных ошибок scrapy
 
 ITEM_PIPELINES = {
