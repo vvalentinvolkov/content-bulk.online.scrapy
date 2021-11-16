@@ -1,5 +1,4 @@
 #MongoDB
-
 MONGO_HOST = 'localhost'
 MONGO_PORT = 27017
 DEFAULT_MONGO_DB_NAME = 'scrapy'
@@ -16,8 +15,9 @@ FAKEUSERAGENT_PROVIDERS = [
 ]
 USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36'
 
+COOKIES_ENABLED = False
 ROBOTSTXT_OBEY = False
-DOWNLOAD_DELAY = 1
+DOWNLOAD_DELAY = 2
 
 SPIDER_MIDDLEWARES = {
    'scrapy.spidermiddlewares.offsite.OffsiteMiddleware': 100,

@@ -135,5 +135,5 @@ class ZenSpider(Spider):
         kwargs['num_images'] = css_handler.get_num_images(response)
         kwargs['num_video'] = css_handler.get_num_video(response)
         kwargs['with_form'] = css_handler.get_with_form(response)
-        print(kwargs)
-        # return kwargs
+        # print(kwargs)
+        return kwargs
