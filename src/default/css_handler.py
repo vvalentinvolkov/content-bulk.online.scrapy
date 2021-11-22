@@ -59,8 +59,9 @@ def get_num_images(response) -> int:
 
 
 def get_num_video(response) -> int:
-    value = response.css('.article-render[itemprop = "articleBody"] .zen-video-embed').getall()
-    return len(value)
+    value1 = response.css('.article-render[itemprop = "articleBody"] .zen-video-embed').getall()
+    value2 = response.css('.article-render[itemprop = "articleBody"] .youtube-embed').getall()
+    return len(value1) + len(value2)
 
 
 def get_with_form(response) -> bool:

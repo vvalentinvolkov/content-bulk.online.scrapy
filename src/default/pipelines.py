@@ -1,6 +1,9 @@
 from mongoengine import connect, ValidationError, NotUniqueError
 from pymongo.errors import ConnectionFailure, WriteError, DuplicateKeyError
 from scrapy.exceptions import CloseSpider, DropItem
+import logging
+
+from . import db_services
 
 
 class MongoPipeline:
@@ -8,15 +11,5 @@ class MongoPipeline:
 
     def process_item(self, item: dict, spider):
         """Вызывается для каждого item"""
-        try:
-            spider.ITEM_CLASS(**item).save()
-        except ConnectionFailure:
-            print('MongoDb is not available - closing the spider')
-            raise CloseSpider
-        except (WriteError, ValidationError) as e:
-            print('Not valid item: ', e, item.get['url'][:50])
-            raise DropItem
-        except (NotUniqueError, DuplicateKeyError):
-            print('Not unique url')
-            raise CloseSpider
+        db_services.db_save(item_class=spider.ITEMCLASS, item=item)
         return item

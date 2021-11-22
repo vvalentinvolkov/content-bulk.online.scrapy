@@ -1,0 +1,15 @@
+services:
+  scrapyd:
+    image: scrapyd-server
+    ports:
+      - "6800:6800"
+    links:
+      - db
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_DB: "habrdb"
+      POSTGRES_USER: "habrpguser"
+      POSTGRES_PASSWORD: "pgpwd4habr"
+    ports:
+      - "5432:5432"

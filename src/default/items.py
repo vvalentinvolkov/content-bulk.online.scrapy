@@ -2,7 +2,7 @@ from datetime import datetime
 
 from mongoengine import Document, StringField, IntField, URLField, BooleanField, ListField
 
-from .settings import DEFAULT_MONGO_COLLECTION_NAME
+from .settings import DEFAULT_TABLE_NAME
 
 
 class CommonArticleItem(Document):
@@ -30,4 +30,4 @@ class CommonArticleItem(Document):
 
 class ZenArticle(CommonArticleItem):
     source = StringField(required=True, default='zen')
-    meta = {'collection': DEFAULT_MONGO_COLLECTION_NAME}
+    meta = {'collection': DEFAULT_TABLE_NAME}

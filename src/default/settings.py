@@ -1,8 +1,8 @@
 #MongoDB
-MONGO_HOST = 'localhost'
-MONGO_PORT = 27017
-DEFAULT_MONGO_DB_NAME = 'scrapy'
-DEFAULT_MONGO_COLLECTION_NAME = 'articles'
+DB_HOST = 'postgres'
+DB_PORT = 5432
+DEFAULT_DB_NAME = 'articles'
+DEFAULT_TABLE_NAME = 'zen_articles'
 
 
 SPIDER_MODULES = ['default.spiders']
@@ -13,7 +13,7 @@ FAKEUSERAGENT_PROVIDERS = [
     'scrapy_fake_useragent.providers.FakerProvider',  # if FakeUserAgentProvider fails, we'll use faker to generate a user-agent string for us
     'scrapy_fake_useragent.providers.FixedUserAgentProvider',  # fall back to USER_AGENT value
 ]
-USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36'
+USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36.'
 
 COOKIES_ENABLED = False
 ROBOTSTXT_OBEY = False

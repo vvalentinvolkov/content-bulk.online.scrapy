@@ -1,6 +1,7 @@
 from datetime import datetime
 import re
 
+import logging
 import mongoengine
 from scrapy import http, Spider
 from pymongo.errors import ConnectionFailure
@@ -8,7 +9,7 @@ from scrapy.exceptions import CloseSpider
 from scrapy.http import TextResponse
 from collections import Counter
 
-from .. import css_handler
+from .. import css_handler, db_services
 from ..items import ZenArticle
 
 
@@ -31,9 +32,9 @@ class ZenSpider(Spider):
         try:
             client = mongoengine.connect(db=db, host=host, port=port)
             client.admin.command('ping')
-            print(f"Connect to {db}")
+            logging.info(f"Connect to {db} database")
         except ConnectionFailure:
-            print(f'MongoDb is not available')
+            logging.error(f'MongoDb is not available')
             raise CloseSpider
 
     @classmethod
@@ -41,15 +42,15 @@ class ZenSpider(Spider):
         host = crawler.settings.get('MONGO_HOST')
         port = crawler.settings.get('MONGO_PORT')
         db = crawler.settings.get('DEFAULT_MONGO_DB_NAME')
-        # cls.mongoengine_connect(db, host, port)
+        db_services.db_connect(db, host, port)
         spider = cls(*args, **kwargs)
         spider._set_crawler(crawler)
         return spider
 
     def close(self, reason):
         # Разрыв соединение когда паук закрывается
-        print(f'Mongoengine - disconnect(alias=default)')
-        mongoengine.disconnect()
+        logging.info(f'Mongoengine - disconnect(alias=default)')
+        db_services.db_disconnect()
 
     def parse(self, response: TextResponse, **kwargs):
         """Получение фида главной страницы - в случае ошибки или не получения какой либо информации
@@ -60,19 +61,19 @@ class ZenSpider(Spider):
         for item in feed_json['items']:
             try:
                 is_verified = item['source'].get('is_verified')
-                is_video = 'video' in item
+                is_video = item['video'] is not None
                 public_date = int(item['publication_date'])
                 time_public_to_parse = int(datetime.utcnow().timestamp()) - public_date
                 if not is_verified and not is_video and time_public_to_parse < 16070400:  # 16070400 сек ~ 6 мес.
                     kwargs = {'title': item['title'],
-                              'link': item['link'],
+                              'link': item['share_link'],
                               'public_date': public_date,
                               'time_public_to_parse': time_public_to_parse,
                              }
                 else:
                     continue
             except KeyError as e:
-                print('Cant get from feed_json item - ', e)
+                logging.warning(f'Cant get from feed_json item - {e}')
             else:
                 yield http.Request(url=item['channel_link'], callback=self.parse_channel, dont_filter=True,
                                    cb_kwargs=kwargs)
@@ -82,9 +83,9 @@ class ZenSpider(Spider):
     def parse_channel(self, response: TextResponse, **kwargs):
         """Получение данных по каналу и формирование ссылки на динамические данные статьи (top_comments)"""
         try:
-            document_id = re.match(r'.*-(\w*)', kwargs['link'])[1]
+            document_id = re.match(r'.*-(\w*)$', kwargs['link'])[1]
         except TypeError:
-            print('Not zen article link - ', kwargs['link'])
+            logging.info(f'Not zen article link - {kwargs["link"]}')
             return None
         channel_json = response.json()
         try:
@@ -99,7 +100,7 @@ class ZenSpider(Spider):
                                 f'&document_id=native%3A{document_id}' \
                                 '&commentCount=100'
         except KeyError as e:
-            print('Cant get from channel_json - ', e)
+            logging.warning(f'Cant get from channel_json - {e}')
             return None
         return http.Request(url=top_comments_link, callback=self.parse_top_comments,
                             cb_kwargs=kwargs)
@@ -120,7 +121,7 @@ class ZenSpider(Spider):
             else:
                 return None
         except KeyError as e:
-            print('Cant get from top_comments_json - ', e)
+            logging.warning(f'Cant get from top_comments_json - {e}')
             return None
         return http.Request(url=kwargs['link'], callback=self.parse_article,
                             cb_kwargs=kwargs)
@@ -135,5 +136,5 @@ class ZenSpider(Spider):
         kwargs['num_images'] = css_handler.get_num_images(response)
         kwargs['num_video'] = css_handler.get_num_video(response)
         kwargs['with_form'] = css_handler.get_with_form(response)
-        # print(kwargs)
-        return kwargs
+        print(kwargs)
+        # return kwargs

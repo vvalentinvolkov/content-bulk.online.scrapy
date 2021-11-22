@@ -1,31 +1,18 @@
-FROM debian:buster-slim
+FROM python:3.10.0-bullseye
 
 WORKDIR /
 
 COPY ./scrapyd.conf /etc/scrapyd/
 COPY ./requirements.txt /requirements.txt
-RUN set -xe \
-    && apt-get update \
-    && apt-get install -y autoconf \
-                          build-essential \
-                          libffi-dev \
-                          libssl-dev \
-                          libtool \
-                          python3 \
-                          python3-dev \
-                          python3-pip
+COPY ./sources.list /etc/apt/sources.list
 
-RUN pip3 install --upgrade pip3 \
-    && pip3 install -r /requirements.txt \
-    && rm /requirements.txt
-RUN apt-get install -y scrapyd
-
-RUN apt-get purge -y --auto-remove autoconf \
-                                   build-essential \
-                                   libffi-dev \
-                                   libssl-dev \
-                                   libtool \
-                                   python-dev
+RUN apt-get -y upgrade
+RUN apt-get -y update
+RUN apt-get install -y libxml2-dev libxslt-dev python-dev\
+    && pip install --upgrade pip \
+    && pip install --no-cache-dir -r /requirements.txt \
+    && rm /requirements.txt \
+    && pip install --no-cache-dir scrapyd
 
 EXPOSE 6800
 
