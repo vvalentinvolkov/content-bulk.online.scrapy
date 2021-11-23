@@ -20,7 +20,7 @@ class ZenSpider(Spider):
     name = 'ZenSpider'
     ITEM_CLASS = ZenArticle  # Класс, унаследованый от Mongoengine.Document, для сохранения MongoPipeline
     allowed_domains = ['zen.yandex.ru']
-    start_urls = ['https://zen.yandex.ru/api/v3/launcher/export?country_code=ru&clid=300']
+    default_zen_feed = 'https://zen.yandex.ru/api/v3/launcher/export?country_code=ru&clid=300'
     feed_interests = [
         'путешествия',
         'история',
@@ -41,9 +41,9 @@ class ZenSpider(Spider):
     ]
 
     # JOBDIR необходима для проверки на дипликаты уже паршеных ссылок (из бд)
-    custom_settings = {
-        'JOBDIR': 'default/crawls/ZenSpider',    # Директория, для хранения состояние паука (FP спаршеных ссылок)
-    }
+    # custom_settings = {
+    #     'JOBDIR': 'default/crawls/ZenSpider',    # Директория, для хранения состояние паука (FP спаршеных ссылок)
+    # }
 
     @staticmethod
     def mongoengine_connect(db, host, port):
@@ -71,37 +71,47 @@ class ZenSpider(Spider):
         logging.info(f'Mongoengine - disconnect(alias=default)')
         db_services.db_disconnect()
 
-    # def start_requests(self):
-    #     url = unquote(url)
-
+    def start_requests(self):
+        kwargs = {'feed': 'main'}
+        yield http.Request(url=self.default_zen_feed, callback=self.parse, dont_filter=True, cb_kwargs=kwargs)
+        yield http.Request(url=self.default_zen_feed, callback=self.parse, dont_filter=True, cb_kwargs=kwargs)
+        yield http.Request(url=self.default_zen_feed, callback=self.parse, dont_filter=True, cb_kwargs=kwargs)
+        for interest in self.feed_interests:
+            url = self.default_zen_feed + '&interest_name=' + interest
+            kwargs = {'feed': interest}
+            yield http.Request(url=url, callback=self.parse, dont_filter=True, cb_kwargs=kwargs)
 
     def parse(self, response: TextResponse, **kwargs):
-        """Получение фида главной страницы - в случае ошибки или не получения какой либо информации
+        """Получение фида - в случае ошибки или не получения какой либо информации
         все последующие запросы возвращают None.
         Проверяем если item это видео или источник верефицирован или публикация старше 6 месяцев -> следующий item
         Все собираемые данных добавляются в kwargs и передаются в cb"""
         feed_json = response.json()
-        for item in feed_json['items']:
-            try:
-                is_verified = item['source'].get('is_verified')
-                is_video = item.get('video') is not None
-                public_date = int(item['publication_date'])
-                time_public_to_parse = int(datetime.utcnow().timestamp()) - public_date
-                if not is_verified and not is_video and time_public_to_parse < 16070400:  # 16070400 сек ~ 6 мес.
-                    kwargs = {'title': item['title'],
-                              'link': item['share_link'],
-                              'public_date': public_date,
-                              'time_public_to_parse': time_public_to_parse,
-                             }
+        try:
+            kwargs['feed_subscribers'] = feed_json['channel']['source']['subscribers']
+        except KeyError as e:
+            logging.warning(f'Cant get feed_subscribers from feed_json - {e}\nSet interest as "main"')
+        if 'items' in feed_json:
+            for item in feed_json['items']:
+                try:
+                    is_verified = item['source'].get('is_verified')
+                    is_video = item.get('video') is not None
+                    public_date = int(item['publication_date'])
+                    time_public_to_parse = int(datetime.utcnow().timestamp()) - public_date
+                    if not is_verified and not is_video and time_public_to_parse < 16070400:  # 16070400 сек ~ 6 мес.
+                        kwargs['title'] = item['title']
+                        kwargs['link'] = item['share_link']
+                        kwargs['public_date'] = public_date
+                        kwargs['time_public_to_parse'] = time_public_to_parse
+                    else:
+                        continue
+                except KeyError as e:
+                    logging.warning(f'Cant get from feed_json["items"] - {e}')
                 else:
-                    continue
-            except KeyError as e:
-                logging.warning(f'Cant get from feed_json["items"] - {e}')
-            else:
-                yield http.Request(url=item['channel_link'], callback=self.parse_channel, dont_filter=True,
-                                   cb_kwargs=kwargs)
-
-        yield http.Request(url=self.start_urls[0], callback=self.parse, dont_filter=True)
+                    yield http.Request(url=item['channel_link'], callback=self.parse_channel, dont_filter=True,
+                                       cb_kwargs=kwargs)
+        else:
+            return None
 
     def parse_channel(self, response: TextResponse, **kwargs):
         """Получение данных по каналу и формирование ссылки на динамические данные статьи (top_comments)"""
@@ -114,7 +124,7 @@ class ZenSpider(Spider):
         try:
             source = channel_json['channel']['source']
             kwargs['subscribers'] = source['subscribers']
-            kwargs['audience'] = source['audience']
+            kwargs['audience'] = source.get('audience')
             publisher_id = source['publisher_id']
             # Ссылка на динамические данные статьи (top_comments)
             top_comments_link = 'https://zen.yandex.ru/api/comments/top-comments?' \

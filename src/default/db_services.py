@@ -21,9 +21,9 @@ def db_disconnect():
     mongoengine.disconnect()
 
 
-def db_save(item_class: type, item: dict):
+def db_save(document_class: type, item: dict):
     try:
-        item_class(**item).save()
+        document_class(**item).save()
     except ConnectionFailure:
         logging.error('MongoDb is not available - closing the spider')
         raise CloseSpider
@@ -32,4 +32,4 @@ def db_save(item_class: type, item: dict):
         raise DropItem
     except (NotUniqueError, DuplicateKeyError):
         logging.warning('Not unique url')
-        raise CloseSpider
+        raise DropItem

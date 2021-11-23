@@ -11,5 +11,5 @@ class MongoPipeline:
 
     def process_item(self, item: dict, spider):
         """Вызывается для каждого item"""
-        db_services.db_save(item_class=spider.ITEM_CLASS, item=item)
+        db_services.db_save(document_class=spider.ITEM_CLASS, item=item)
         return item

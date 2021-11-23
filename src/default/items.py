@@ -1,6 +1,4 @@
-from datetime import datetime
-
-from mongoengine import Document, StringField, IntField, URLField, BooleanField, ListField
+from mongoengine import Document, StringField, IntField, URLField, ListField, ReferenceField
 
 
 class CommonArticleItem(Document):
@@ -9,7 +7,7 @@ class CommonArticleItem(Document):
     title = StringField(required=True)
     link = URLField(required=True, unique=True)
     interests = ListField(default=['No data'])
-    audience = IntField(required=True)
+    audience = IntField(default=0)
     likes = IntField(required=True)
     reads = IntField(required=True)
     visitors = IntField(required=True)
@@ -24,6 +22,21 @@ class CommonArticleItem(Document):
     meta = {'abstract': True}
 
 
+class ZenFeed(Document):
+    feed = StringField(required=True, unique=True, defaut='main')
+    feed_subscribers = IntField(required=True, defaut=0)
+
+    meta = {'collection': 'zen_interests'}
+
+
 class ZenArticle(CommonArticleItem):
     source = StringField(required=True, default='zen')
+    zen_feed = ReferenceField(ZenFeed)
+
     meta = {'collection': 'zen_articles'}
+
+    def __init__(self, *args, **kwargs):
+        kwargs['zen_feed'] = ZenFeed(feed=kwargs.pop('feed', None),
+                                     feed_subscribers=kwargs.pop('feed_subscribers', None))
+        super().__init__(*args, **kwargs)
+
