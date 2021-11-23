@@ -1,5 +1,6 @@
 from datetime import datetime
 import re
+from urllib.parse import unquote
 
 import logging
 import mongoengine
@@ -20,6 +21,24 @@ class ZenSpider(Spider):
     ITEM_CLASS = ZenArticle  # Класс, унаследованый от Mongoengine.Document, для сохранения MongoPipeline
     allowed_domains = ['zen.yandex.ru']
     start_urls = ['https://zen.yandex.ru/api/v3/launcher/export?country_code=ru&clid=300']
+    feed_interests = [
+        'путешествия',
+        'история',
+        'здоровье',
+        'недвижимость',
+        'политика',
+        'наука',
+        'ссср',
+        'юмор',
+        'садидача',
+        'рецепты',
+        'кухня',
+        'искусство',
+        'политика',
+        'наука',
+        'здоровье',
+        'экономика'
+    ]
 
     # JOBDIR необходима для проверки на дипликаты уже паршеных ссылок (из бд)
     custom_settings = {
@@ -39,9 +58,9 @@ class ZenSpider(Spider):
 
     @classmethod
     def from_crawler(cls, crawler, *args, **kwargs):
-        host = crawler.settings.get('MONGO_HOST')
-        port = crawler.settings.get('MONGO_PORT')
-        db = crawler.settings.get('DEFAULT_MONGO_DB_NAME')
+        host = crawler.settings.get('DB_HOST')
+        port = crawler.settings.get('DB_PORT')
+        db = crawler.settings.get('DEFAULT_DB_NAME')
         db_services.db_connect(db, host, port)
         spider = cls(*args, **kwargs)
         spider._set_crawler(crawler)
@@ -52,16 +71,20 @@ class ZenSpider(Spider):
         logging.info(f'Mongoengine - disconnect(alias=default)')
         db_services.db_disconnect()
 
+    # def start_requests(self):
+    #     url = unquote(url)
+
+
     def parse(self, response: TextResponse, **kwargs):
         """Получение фида главной страницы - в случае ошибки или не получения какой либо информации
         все последующие запросы возвращают None.
-        Проверяем если item это видео или источник верефицирован или публикация старше 6 месяяцев - следующий item
+        Проверяем если item это видео или источник верефицирован или публикация старше 6 месяцев -> следующий item
         Все собираемые данных добавляются в kwargs и передаются в cb"""
         feed_json = response.json()
         for item in feed_json['items']:
             try:
                 is_verified = item['source'].get('is_verified')
-                is_video = item['video'] is not None
+                is_video = item.get('video') is not None
                 public_date = int(item['publication_date'])
                 time_public_to_parse = int(datetime.utcnow().timestamp()) - public_date
                 if not is_verified and not is_video and time_public_to_parse < 16070400:  # 16070400 сек ~ 6 мес.
@@ -73,7 +96,7 @@ class ZenSpider(Spider):
                 else:
                     continue
             except KeyError as e:
-                logging.warning(f'Cant get from feed_json item - {e}')
+                logging.warning(f'Cant get from feed_json["items"] - {e}')
             else:
                 yield http.Request(url=item['channel_link'], callback=self.parse_channel, dont_filter=True,
                                    cb_kwargs=kwargs)
@@ -93,7 +116,7 @@ class ZenSpider(Spider):
             kwargs['subscribers'] = source['subscribers']
             kwargs['audience'] = source['audience']
             publisher_id = source['publisher_id']
-            # Ссылка из api зена по доп инфу по статье
+            # Ссылка на динамические данные статьи (top_comments)
             top_comments_link = 'https://zen.yandex.ru/api/comments/top-comments?' \
                                 'withUser=true&retryNum=0&manualRetry=false&commentId=0&withProfile=true' \
                                 f'&publisher_id={publisher_id}' \
@@ -134,7 +157,5 @@ class ZenSpider(Spider):
         kwargs['read_time'] = css_handler.get_read_time(response)
         kwargs['length'] = css_handler.get_length(response)
         kwargs['num_images'] = css_handler.get_num_images(response)
-        kwargs['num_video'] = css_handler.get_num_video(response)
-        kwargs['with_form'] = css_handler.get_with_form(response)
-        print(kwargs)
-        # return kwargs
+        # print(kwargs)
+        return kwargs

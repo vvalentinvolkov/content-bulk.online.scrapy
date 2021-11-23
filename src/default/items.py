@@ -2,8 +2,6 @@ from datetime import datetime
 
 from mongoengine import Document, StringField, IntField, URLField, BooleanField, ListField
 
-from .settings import DEFAULT_TABLE_NAME
-
 
 class CommonArticleItem(Document):
     """Общие поля для всех статей из разных источников"""
@@ -22,12 +20,10 @@ class CommonArticleItem(Document):
     public_date = IntField(required=True)
     length = IntField(required=True)
     num_images = IntField(required=True)
-    num_video = IntField(required=True)
-    with_form = BooleanField(required=True)
 
     meta = {'abstract': True}
 
 
 class ZenArticle(CommonArticleItem):
     source = StringField(required=True, default='zen')
-    meta = {'collection': DEFAULT_TABLE_NAME}
+    meta = {'collection': 'zen_articles'}

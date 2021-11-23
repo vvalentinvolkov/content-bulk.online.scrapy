@@ -1,8 +1,9 @@
-#MongoDB
-DB_HOST = 'postgres'
-DB_PORT = 5432
+import os
+
+#Database
+DB_HOST = os.environ.get('DB_HOST', default='localhost')
+DB_PORT = int(os.environ.get('DB_PORT', default=27017))
 DEFAULT_DB_NAME = 'articles'
-DEFAULT_TABLE_NAME = 'zen_articles'
 
 
 SPIDER_MODULES = ['default.spiders']

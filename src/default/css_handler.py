@@ -57,13 +57,3 @@ def get_num_images(response) -> int:
     value = response.css('.article-render[itemprop = "articleBody"] .article-image-item__image').getall()
     return len(value)
 
-
-def get_num_video(response) -> int:
-    value1 = response.css('.article-render[itemprop = "articleBody"] .zen-video-embed').getall()
-    value2 = response.css('.article-render[itemprop = "articleBody"] .youtube-embed').getall()
-    return len(value1) + len(value2)
-
-
-def get_with_form(response) -> bool:
-    value = response.css('.article-render[itemprop = "articleBody"] .yandex-forms-embed').get()
-    return bool(value)
