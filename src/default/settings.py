@@ -3,7 +3,7 @@ import os
 #Database
 DB_HOST = os.environ.get('DB_HOST', default='localhost')
 DB_PORT = int(os.environ.get('DB_PORT', default=27017))
-DEFAULT_DB_NAME = 'articles'
+DB_NAME = 'default_articles'
 
 
 SPIDER_MODULES = ['default.spiders']
@@ -21,22 +21,23 @@ ROBOTSTXT_OBEY = False
 DOWNLOAD_DELAY = 2
 
 SPIDER_MIDDLEWARES = {
-   'scrapy.spidermiddlewares.offsite.OffsiteMiddleware': 100,
+    'scrapy.spidermiddlewares.offsite.OffsiteMiddleware': 100,
 }
 
 DOWNLOADER_MIDDLEWARES = {
-   'scrapy_fake_useragent.middleware.RandomUserAgentMiddleware': 400,
-   'scrapy_fake_useragent.middleware.RetryUserAgentMiddleware': 401,
-   'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
+    'scrapy.downloadermiddlewares.defaultheaders.DefaultHeadersMiddleware': 300,
+    'scrapy_fake_useragent.middleware.RandomUserAgentMiddleware': 400,
+    'scrapy_fake_useragent.middleware.RetryUserAgentMiddleware': 401,
+    'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
 }
 
 EXTENSIONS = {
-   'scrapy.extensions.closespider.CloseSpider': 100
+    'scrapy.extensions.closespider.CloseSpider': 100
 }
 
 CLOSESPIDER_ITEMCOUNT = 3   # Ограничение по колличеству item вовзращенных из функций *_parse
 CLOSESPIDER_ERRORCOUNT = 10   # Ограничение по колличеству поднятых встроенных ошибок scrapy
 
 ITEM_PIPELINES = {
-   'default.pipelines.MongoPipeline': 100,
+    'default.pipelines.MongoPipeline': 100,
 }
