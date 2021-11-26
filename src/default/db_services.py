@@ -6,21 +6,18 @@ import mongoengine
 from mongoengine import ValidationError, NotUniqueError, FieldDoesNotExist, ConnectionFailure, Document
 from scrapy.exceptions import CloseSpider, DropItem
 
-from src.default.items import MyDocument
+from .items import MyDocument
 
 
 def db_connect(db, host, port):
     """Подключение к MongoDb через mongoengine - при ConnectionFailure подымает CloseSpider"""
-    if os.environ.get('SCRAPY_CHECK'):
-        mongoengine.connect('mongo_test', host='mongomock://localhost')
-    else:
-        try:
-            client = mongoengine.connect(db=db, host=host, port=port)
-            client.admin.command('ping')
-            logging.info(f"Connect to {db} database")
-        except ConnectionFailure:
-            logging.error(f'MongoDb is not available')
-            raise CloseSpider
+    try:
+        client = mongoengine.connect(db=db, host=host, port=port)
+        client.admin.command('ping')
+        logging.info(f"Connect to {db} database")
+    except ConnectionFailure:
+        logging.error(f'MongoDb is not available')
+        raise CloseSpider
 
 
 def db_disconnect():
@@ -36,7 +33,7 @@ def db_save(item: Union[dict, MyDocument], document_class: type = None):
         if isinstance(item, MyDocument):
             item.mtm_cascade_save()
         elif document_class:
-            document_class(**item).mtm_cascade_save()
+            document_class(item=item).mtm_cascade_save()
         else:
             logging.error('db_save(...) need item: Document or document_class: type(Document)')
     except ConnectionFailure:

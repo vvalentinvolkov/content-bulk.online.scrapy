@@ -1,5 +1,6 @@
 import pytest
-from mongoengine import Document, StringField, connect, disconnect, ListField, ReferenceField
+from mongoengine import Document, StringField, connect, disconnect, ListField, ReferenceField, IntField, URLField, \
+    NotUniqueError
 from scrapy.exceptions import CloseSpider, DropItem
 
 from src.default import db_services
@@ -78,10 +79,8 @@ class TestDbServices:
     def test_cascade_save_for_many_to_many(self, connect_to_mongo):
         """тест: при сохранении документа с many-to-many полем: ListField(ReferenceField(<Document>))
         сохраняет связанные документы"""
-        # FIXME: Требует сохранения связаных элементов перед ссылкой на них
         class RefItem(MyDocument):
-            field = StringField(primaty_key=True)
-            # meta={'force_insert'}
+            field = StringField(primary_key=True)
 
             meta = {'cascade': True,
                     'force_insert': True}
@@ -118,8 +117,8 @@ class TestItems:
     def test_save_zen_article_with_creating_zen_feed(self, connect_to_mongo):
         """тест: при сохранении ZenArticle создаются и сохраняются обхекты feed
         из атрибутов feed и interests, без перезаписи уже существующий ZenFeed"""
-        db_services.db_save(ZenSpider.load_item(self.parsed_item))
-        db_services.db_save(ZenSpider.load_item(self.parsed_item2))
+        db_services.db_save(document_class=ZenArticle, item=self.parsed_item)
+        db_services.db_save(document_class=ZenArticle, item=self.parsed_item2)
         articles = ZenArticle.objects.all()
         feeds = ZenFeed.objects.all()
 

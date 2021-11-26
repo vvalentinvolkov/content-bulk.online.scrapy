@@ -1,10 +1,14 @@
+from dataclasses import dataclass
+
 from mongoengine import Document, StringField, IntField, URLField, ListField, ReferenceField, NotUniqueError
 
 
 class MyDocument(Document):
-
+    """Базовый класс для всех документов - нужен для корректной работы db_services
+    и содержит вспомогательные методы"""
     meta = {'abstract': True}
 
+    # TODO: переписать чрез пре методы с прверкой на каскад
     def mtm_cascade_save(self):
         """Сохраняет документ. Потом, ищет поля ListField с вложенными ReferenceField (many-to-many)
         и сохраняет все экземпляры в найденных списках"""
@@ -22,6 +26,12 @@ class MyDocument(Document):
                                 ref.save(force_insert=ref._meta['force_insert'])
                             except NotUniqueError:
                                 pass
+
+    def __init__(self, item: dict = {}, *args, **kwargs):
+        # Принимает именнованый параметр item и распоковывает его вместе с kwargs -
+        # необходим для документов, не перезаписывающих __init__, т.к. db_services.save()
+        # прокидывает item: dict для каждого класса
+        super().__init__(*args, **kwargs, **item)
 
 
 class CommonArticleItem(MyDocument):
@@ -60,6 +70,18 @@ class ZenArticle(CommonArticleItem):
 
     meta = {'collection': 'zen_articles',
             'cascade': True}
+
+    def __init__(self, item: dict = {}, *args, **kwargs):
+        # Меняет спаршеный словарь для корректного создания ReferenceField
+        if item:
+            # Создаем объект ZenFeed из значений полученых пауком и записываем в item['zen_feed']
+            # и удаляем item['feed'], item['feed_subscribers']
+            item['feed'] = ZenFeed(feed=item.pop('feed'),
+                                   feed_subscribers=item.pop('feed_subscribers', None))
+            # Заменяем списко str - kwargs['interests'] на список объектов ZenFeed
+            item['interests'] = [ZenFeed(feed=interest) for interest in item['interests']]
+        super().__init__(*args, **kwargs, **item)
+
 
 
 
