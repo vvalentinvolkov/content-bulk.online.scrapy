@@ -190,4 +190,14 @@ class ZenSpider(Spider):
             response.css('.article-render[itemprop = "articleBody"] > p *::text').getall())
         kwargs['num_images'] = re_handler.get_num_images(
             response.css('.article-render[itemprop = "articleBody"] .article-image-item__image').getall())
-        return kwargs
+        return self.load_item(kwargs)
+
+    @staticmethod
+    def load_item(item: dict) -> dict:
+        # Создаем объект ZenFeed из значений полученых пауком и записываем в item['zen_feed']
+        # и удаляем item['feed_subscribers']
+        item['feed'] = ZenFeed(feed=item['feed'],
+                               feed_subscribers=item.pop('feed_subscribers', None))
+        # Заменяем списко str - kwargs['interests'] на список объектов ZenFeed
+        item['interests'] = [ZenFeed(feed=interest) for interest in item['interests']]
+        return item

@@ -27,14 +27,6 @@ class MyDocument(Document):
                             except NotUniqueError:
                                 pass
 
-    def __init__(self, db_save: bool = False, *args, **kwargs):
-        """Принимает именнованый параметр db_save, необходимый для документов,
-        не перезаписывающих __init__. Это дает возсожность передавать в kwargs
-        не валидные значения для конструктора документа, и изменять их в __init__
-        документа. При этом, не указания db_save, kwargs не должен изменяться -
-        необходимо для создания обхекта при выгрузке из бд"""
-        super().__init__(*args, **kwargs)
-
 
 class CommonArticleItem(MyDocument):
     """Общие поля для всех статей из разных источников"""
@@ -72,19 +64,6 @@ class ZenArticle(CommonArticleItem):
 
     meta = {'collection': 'zen_articles',
             'cascade': True}
-
-    def __init__(self, db_save: bool = False, *args, **kwargs):
-        # Меняет спаршеный словарь для корректного создания ReferenceField
-        # От db_save kwargs приходит с лишними полями feed и interests, которые нобходимо
-        # переопределить с ZenFeed объектами
-        if db_save:
-            # Создаем объект ZenFeed из значений полученых пауком и записываем в item['zen_feed']
-            # и удаляем item['feed'], item['feed_subscribers']
-            kwargs['feed'] = ZenFeed(feed=kwargs.pop('feed'),
-                                     feed_subscribers=kwargs.pop('feed_subscribers', None))
-            # Заменяем списко str - kwargs['interests'] на список объектов ZenFeed
-            kwargs['interests'] = [ZenFeed(feed=interest) for interest in kwargs['interests']]
-        super().__init__(*args, **kwargs)
 
 
 

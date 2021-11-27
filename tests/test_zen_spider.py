@@ -101,16 +101,20 @@ def test_parse_top_comments():
     assert len(request.cb_kwargs['interests']) <= 10
 
 
-def test_parse_article():
+def test_parse_article_and_load_item():
     spider = ZenSpider()
     response = scrapy.http.HtmlResponse(
         url='https://zen.yandex.ru/media/adstella/7-planet-pohojih-na-zemliu-611262e8ccb50c2963f547a4',
         body=requests.get('https://zen.yandex.ru/media/adstella/'
                           '7-planet-pohojih-na-zemliu-611262e8ccb50c2963f547a4').text,
         encoding='utf-8')
-    res = spider.parse_article(response)
+    res = spider.parse_article(response, feed='feed', feed_subscribers=10, interests=['feed1', 'feed2'])
     assert res['visitors'] is not None
     assert res['reads'] is not None
     assert res['read_time'] is not None
     assert res['length'] is not None
     assert res['num_images'] is not None
+    assert res['feed'].feed == 'feed'
+    assert res['feed'].feed_subscribers == 10
+    assert res['interests'][0].feed == 'feed1'
+    assert res['interests'][1].feed == 'feed2'

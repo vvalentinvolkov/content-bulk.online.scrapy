@@ -4,6 +4,7 @@ from scrapy.exceptions import CloseSpider, DropItem
 
 from src.default import db_services
 from src.default.items import ZenArticle, ZenFeed, MyDocument
+from src.default.spiders.zen_spider import ZenSpider
 
 
 class SomeItem(MyDocument):
@@ -113,8 +114,8 @@ class TestItems:
     def test_save_zen_article_with_creating_zen_feed(self, connect_to_mock_mongo):
         """тест: при сохранении ZenArticle создаются и сохраняются обхекты feed
         из атрибутов feed и interests, без перезаписи уже существующий ZenFeed"""
-        db_services.db_save(document_class=ZenArticle, item=self.parsed_item1)
-        db_services.db_save(document_class=ZenArticle, item=self.parsed_item2)
+        db_services.db_save(document_class=ZenArticle, item=ZenSpider.load_item(self.parsed_item1))
+        db_services.db_save(document_class=ZenArticle, item=ZenSpider.load_item(self.parsed_item2))
         articles = ZenArticle.objects.all()
         feeds = ZenFeed.objects.all()
 
