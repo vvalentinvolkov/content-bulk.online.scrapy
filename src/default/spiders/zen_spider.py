@@ -52,10 +52,13 @@ class ZenSpider(Spider):
         db = crawler.settings.get('DB_NAME')
         db_services.db_connect(db, host, port)
 
-    @staticmethod
-    def get_feeds_from_db():
+    def get_feeds(self):
         """Получает список фидов для парсинга из бд"""
-        _feeds = list(ZenFeed.objects.scalar('feed'))
+        if self.settings.get('ZEN_FEEDS_TO_PARSE'):
+            _feeds = self.settings.get('ZEN_FEEDS_TO_PARSE').split(' ')
+        else:
+            _feeds = list(ZenFeed.objects.scalar('feed')
+        )
         if len(_feeds) == 0:
             logging.error('An empty feeds set. Add some ZenFeed objects in a database or'
                           ' set some feeds split by a space via setting["ZEN_FEEDS_TO_PARSE"]')
@@ -66,7 +69,6 @@ class ZenSpider(Spider):
     def from_crawler(cls, crawler, *args, **kwargs):
         cls.parse_cycles = crawler.settings.get('PARSE_CYCLES')
         cls.connect_to_mongo(crawler)
-        cls.feeds = crawler.settings.get('ZEN_FEEDS_TO_PARSE', cls.feeds)
         spider = cls(*args, **kwargs)
         spider._set_crawler(crawler)
         return spider
@@ -78,7 +80,7 @@ class ZenSpider(Spider):
     def start_requests(self):
         for _ in range(self.parse_cycles):
             if len(self.feeds) == 0:
-                self.feeds = self.get_feeds_from_db()
+                self.feeds = self.get_feeds()
 
             for interest in self.feeds:
                 url = self.default_feed + '&interest_name=' + interest
@@ -92,12 +94,8 @@ class ZenSpider(Spider):
         """Получение фида - в случае ошибки или не получения какой либо информации
         все последующие запросы возвращают None.
         Проверяем если item это видео или источник верефицирован или публикация старше 6 месяцев -> следующий item
-        Все собираемые данных добавляются в kwargs и передаются в cb
+        Все собираемые данных добавляются в kwargs и передаются в cb"""
 
-        Spiders Contracts - Возвращает минимум один запрос
-        @url https://zen.yandex.ru/api/v3/launcher/export?country_code=ru&clid=300&interest_name=наука
-        @returns request 1
-        """
         feed_json = response.json()
         try:
             kwargs['feed_subscribers'] = feed_json['channel']['source']['subscribers']
@@ -130,13 +128,7 @@ class ZenSpider(Spider):
             return None
 
     def parse_channel(self, response: TextResponse, **kwargs):
-        """Получение данных по каналу и формирование ссылки на динамические данные статьи (top_comments)
-
-        Spiders Contracts - Возвращает минимум один запрос
-        @url https://zen.yandex.ru/api/v3/launcher/export?country_code=ru&lang=en&_csrf=298da2f6b3cd7f67dfae54e52942cce36205bf79-1637948673787-0-8725673611634847234%3A0&clid=300&channel_name=adstella
-        @cb_kwargs {"link": "https://zen.yandex.ru/media/adstella/7-planet-pohojih-na-zemliu-611262e8ccb50c2963f547a4"}
-        @returns request 1
-        """
+        """Получение данных по каналу и формирование ссылки на динамические данные статьи (top_comments)"""
 
         try:
             document_id = re.match(r'.*-(\w*)$', kwargs['link'])[1]
@@ -152,8 +144,8 @@ class ZenSpider(Spider):
             # Ссылка на динамические данные статьи (top_comments)
             top_comments_link = 'https://zen.yandex.ru/api/comments/top-comments?' \
                                 'withUser=true&retryNum=0&manualRetry=false&commentId=0&withProfile=true' \
-                                f'&publisher_id={publisher_id}' \
-                                f'&document_id=native%3A{document_id}' \
+                                f'&publisherId={publisher_id}' \
+                                f'&documentId=native%3A{document_id}' \
                                 '&commentCount=100'
         except KeyError as e:
             logging.warning(f'Cant get from channel_json - {e}')
@@ -163,13 +155,7 @@ class ZenSpider(Spider):
                             cb_kwargs=kwargs)
 
     def parse_top_comments(self, response: TextResponse, **kwargs):
-        """Получение динамических данных статьи и интересов из комментариев
-
-        Spiders Contracts - Возвращает минимум один запрос
-        @url https://zen.yandex.ru/api/comments/top-comments?withUser=true&retryNum=0&manualRetry=false&commentId=0&withProfile=true&publisherId=607dbfe0a7a0b86de23291dc&documentId=native:611262e8ccb50c2963f547a4&commentCount=100
-        @cb_kwargs {"link": "https://zen.yandex.ru/media/adstella/7-planet-pohojih-na-zemliu-611262e8ccb50c2963f547a4"}
-        @returns request 1
-        """
+        """Получение динамических данных статьи и интересов из комментариев"""
         top_comments_json = response.json()
         try:
             meta = top_comments_json['meta']
@@ -192,13 +178,7 @@ class ZenSpider(Spider):
 
     def parse_article(self, response, **kwargs):
         """Получение данных самой статьи - селекторы содержат функции-обработчики в css_handler.
-        Отдает в pipeline kwargs, которые содержит все данные полученые в пред запросах
-
-        Spiders Contracts - Проверяем все поля словоря (ZenArticle)
-        @url https://zen.yandex.ru/api/comments/top-comments?withUser=true&retryNum=0&manualRetry=false&commentId=0&withProfile=true&publisherId=607dbfe0a7a0b86de23291dc&documentId=native:611262e8ccb50c2963f547a4&commentCount=100
-        @cb_kwargs {"link": "https://zen.yandex.ru/media/adstella/7-planet-pohojih-na-zemliu-611262e8ccb50c2963f547a4"}
-        @returns item 1
-        """
+        Отдает в pipeline kwargs, которые содержит все данные полученые в пред запросах"""
 
         kwargs['visitors'] = re_handler.get_visitors(
             response.css('.article-stats-view__tip div:nth-child(1) span::text').get())
@@ -210,5 +190,4 @@ class ZenSpider(Spider):
             response.css('.article-render[itemprop = "articleBody"] > p *::text').getall())
         kwargs['num_images'] = re_handler.get_num_images(
             response.css('.article-render[itemprop = "articleBody"] .article-image-item__image').getall())
-        # print(kwargs)
         return kwargs
