@@ -32,7 +32,7 @@ def db_save(item: Union[dict, MyDocument], document_class: type = None):
         if isinstance(item, MyDocument):
             item.mtm_cascade_save()
         elif document_class:
-            document_class(item=item).mtm_cascade_save()
+            document_class(db_save=True, **item).mtm_cascade_save()
         else:
             logging.error('db_save(...) need item: Document or document_class: type(Document)')
     except ConnectionFailure:

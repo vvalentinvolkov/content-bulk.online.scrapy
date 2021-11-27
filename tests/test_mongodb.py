@@ -101,10 +101,10 @@ class TestDbServices:
 
 class TestItems:
     """"""
-    parsed_item = dict(feed='feed1', feed_subscribers=100, title='title1', link='https://zen.yandex.ru/',
-                       public_date=200, time_public_to_parse=300, subscribers=400, audience=500, likes=600,
-                       comments=700, interests=['feed1', 'feed2', 'feed3'], visitors=800, reads=900, read_time=1000,
-                       length=1100, num_images=1200)
+    parsed_item1 = dict(feed='feed1', feed_subscribers=100, title='title1', link='https://zen.yandex.ru/',
+                        public_date=200, time_public_to_parse=300, subscribers=400, audience=500, likes=600,
+                        comments=700, interests=['feed1', 'feed2', 'feed3'], visitors=800, reads=900, read_time=1000,
+                        length=1100, num_images=1200)
     parsed_item2 = dict(feed='feed2', feed_subscribers=100, title='title1', link='https://zen.yandex.ru/2',
                         public_date=200, time_public_to_parse=300, subscribers=400, audience=500, likes=600,
                         comments=700, interests=['feed1', 'feed2', 'feed3'], visitors=800, reads=900, read_time=1000,
@@ -113,7 +113,7 @@ class TestItems:
     def test_save_zen_article_with_creating_zen_feed(self, connect_to_mock_mongo):
         """тест: при сохранении ZenArticle создаются и сохраняются обхекты feed
         из атрибутов feed и interests, без перезаписи уже существующий ZenFeed"""
-        db_services.db_save(document_class=ZenArticle, item=self.parsed_item)
+        db_services.db_save(document_class=ZenArticle, item=self.parsed_item1)
         db_services.db_save(document_class=ZenArticle, item=self.parsed_item2)
         articles = ZenArticle.objects.all()
         feeds = ZenFeed.objects.all()
