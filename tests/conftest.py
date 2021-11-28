@@ -8,9 +8,8 @@ from src.default.spiders.zen_spider import ZenSpider
 def zen_spider():
     return ZenSpider()
 
-# TODO: как вернуть знчение в yield?
+
 @pytest.fixture()
 def connect_to_mock_mongo():
-    connect('mongo_test', host='mongomock://localhost')
-    yield
+    yield connect('mongo_test', host='mongomock://localhost')
     disconnect()

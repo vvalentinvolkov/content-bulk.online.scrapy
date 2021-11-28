@@ -14,11 +14,6 @@ class SomeItem(MyDocument):
 
 class TestDbServices:
     """"""
-
-    def test_db_connect(self, connect_to_mock_mongo):
-        with pytest.raises(CloseSpider):
-            db_services.db_connect(db='db', host='not_localhost', port=27017)
-
     def test_db_save_dict(self, connect_to_mock_mongo):
         """тест корректного сохранения словаря"""
         item = {'first_field': 'first_value',

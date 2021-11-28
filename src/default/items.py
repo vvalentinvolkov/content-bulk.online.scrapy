@@ -8,22 +8,22 @@ class MyDocument(Document):
     и содержит вспомогательные методы"""
     meta = {'abstract': True}
 
-    # TODO: переписать чрез пре методы с прверкой на каскад
     def mtm_cascade_save(self):
         """Сохраняет документ. Потом, ищет поля ListField с вложенными ReferenceField (many-to-many)
-        и сохраняет все экземпляры в найденных списках"""
+        и сохраняет все экземпляры в найденных списках (один уровень вложености)"""
         self.save()
         if self._meta.get('cascade'):
             document_cls = type(self)
-            # TODO: рефракторинг имен
-            for field_name in document_cls._fields_ordered:
-                list_field = getattr(document_cls, field_name)
-                if isinstance(list_field, ListField):
-                    ref_field = list_field.field
-                    if isinstance(ref_field, ReferenceField):
-                        for ref in getattr(self, field_name):
+            all_field_names = document_cls._fields_ordered  # получаем имена всех полей в документе
+            for field_name in all_field_names:
+                field = getattr(document_cls, field_name)   # получаем объект класса Field
+                if isinstance(field, ListField):
+                    in_list_field = field.field     # получаем объект класса, который лежит в ListField
+                    if isinstance(in_list_field, ReferenceField):
+                        ref_documents = getattr(self, field_name)   # список в экземпляре документа ([<ReferenceField>])
+                        for ref_document in ref_documents:
                             try:
-                                ref.save(force_insert=ref._meta['force_insert'])
+                                ref_document.save(force_insert=ref_document._meta['force_insert'])
                             except NotUniqueError:
                                 pass
 
