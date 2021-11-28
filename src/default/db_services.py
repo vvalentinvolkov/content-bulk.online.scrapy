@@ -15,8 +15,13 @@ def db_connect(db, host, port):
         client.admin.command('ping')
         logging.info(f"Connect to {db} database")
     except ConnectionFailure:
-        logging.error(f'MongoDb is not available')
-        raise CloseSpider
+        try:
+            client = mongoengine.get_connection()
+            client.admin.command('ping')
+            logging.info(f"Connect to {db} database (created before)")
+        except ConnectionFailure:
+            logging.error(f'MongoDb is not available')
+            raise CloseSpider
 
 
 def db_disconnect():

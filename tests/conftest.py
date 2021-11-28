@@ -6,7 +6,9 @@ from src.default.spiders.zen_spider import ZenSpider
 
 @pytest.fixture()
 def zen_spider():
-    return ZenSpider()
+    spider = ZenSpider()
+    spider.custom_settings.pop('JOBDIR', None)
+    return spider
 
 
 @pytest.fixture()

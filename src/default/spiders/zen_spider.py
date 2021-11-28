@@ -19,7 +19,7 @@ class ZenSpider(Spider):
     ITEM_CLASS = ZenArticle  # Класс, унаследованый от Mongoengine.Document, для сохранения MongoPipeline
     allowed_domains = ['zen.yandex.ru']
     default_feed = 'https://zen.yandex.ru/api/v3/launcher/export?country_code=ru&clid=300'
-    feeds = {}
+    feeds = []
     # headers = {
     #         # 'Accept': 'application/json;text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
     #         'Accept-Encoding': 'gzip, deflate, br',
@@ -81,10 +81,9 @@ class ZenSpider(Spider):
         for _ in range(self.parse_cycles):
             if len(self.feeds) == 0:
                 self.feeds = self.get_feeds()
-
-            for interest in self.feeds:
-                url = self.default_feed + '&interest_name=' + interest
-                kwargs = {'feed': interest}
+            for feed in self.feeds:
+                url = self.default_feed + '&interest_name=' + feed
+                kwargs = {'feed': feed}
                 yield http.Request(url=url,
                                    callback=self.parse,
                                    dont_filter=True,
