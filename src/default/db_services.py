@@ -8,27 +8,6 @@ from scrapy.exceptions import CloseSpider, DropItem
 from .items import MyDocument
 
 
-def db_connect(db, host, port):
-    """Подключение к MongoDb через mongoengine - при ConnectionFailure подымает CloseSpider"""
-    try:
-        client = mongoengine.connect(db=db, host=host, port=port)
-        client.admin.command('ping')
-        logging.info(f"Connect to {db} database")
-    except ConnectionFailure:
-        try:
-            client = mongoengine.get_connection()
-            client.admin.command('ping')
-            logging.info(f"Connect to {db} database (created before)")
-        except ConnectionFailure:
-            logging.error(f'MongoDb is not available')
-            raise CloseSpider
-
-
-def db_disconnect():
-    logging.info(f'Mongoengine - disconnect(alias=default)')
-    mongoengine.disconnect()
-
-
 def db_save(item: Union[dict, MyDocument], document_class: type = None):
     """Сохраняет документ и все вложенные документы в бд
     Если item экземпляр Document - сохраняет его
