@@ -45,7 +45,7 @@ class CommonArticleItem(MyDocument):
 
 
 class ZenFeed(MyDocument):
-    feed = StringField(primary_key=True)
+    feed_name = StringField(primary_key=True)
     feed_subscribers = IntField()
 
     meta = {'collection': 'zen_feeds',
@@ -55,7 +55,7 @@ class ZenFeed(MyDocument):
 
 class ZenArticle(CommonArticleItem):
     source = StringField(required=True, default='zen')
-    feed = ReferenceField(ZenFeed, default=ZenFeed(feed='default'))
+    feed = ReferenceField(ZenFeed, default=ZenFeed(feed_name='default'))
     interests = ListField(ReferenceField(ZenFeed), required=True)
     audience = IntField()
     visitors = IntField(required=True)

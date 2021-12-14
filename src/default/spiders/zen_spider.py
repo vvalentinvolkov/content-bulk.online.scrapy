@@ -19,7 +19,7 @@ class ZenSpider(Spider):
     name = 'ZenSpider'
     allowed_domains = ['zen.yandex.ru']
     default_feed = 'https://zen.yandex.ru/api/v3/launcher/export?country_code=ru&clid=300'
-    feeds = []
+    feeds_names = []
 
     custom_settings = {
         'JOBDIR': 'default/crawls/ZenSpider',   # Директория, для хранения состояние паука (FP спаршеных ссылок)
@@ -28,12 +28,12 @@ class ZenSpider(Spider):
         'ITEM_CLASS': ZenArticle  # Класс, унаследованый от Mongoengine.Document, для сохранения MongoPipeline
     }
 
-    def get_feeds(self):
+    def get_feeds_names(self):
         """Получает список фидов для парсинга из бд"""
         if self.settings.get('ZEN_FEEDS_TO_PARSE'):
             _feeds = self.settings.get('ZEN_FEEDS_TO_PARSE').split(' ')
         else:
-            _feeds = db_services.get_all_scalar(ZenFeed, 'feed')
+            _feeds = db_services.get_all_scalar(ZenFeed, 'feed_name')
         if len(_feeds) == 0:
             self.logger.error('An empty feeds set. Add some ZenFeed objects in a database or'
                           ' set some feeds split by a space via setting["ZEN_FEEDS_TO_PARSE"]')
@@ -50,11 +50,11 @@ class ZenSpider(Spider):
 
     def start_requests(self):
         for _ in range(self.parse_cycles):
-            if len(self.feeds) == 0:
-                self.feeds = self.get_feeds()
-            for feed in self.feeds:
-                url = self.default_feed + '&interest_name=' + feed
-                kwargs = {'feed': feed}
+            if len(self.feeds_names) == 0:
+                self.feeds_names = self.get_feeds_names()
+            for feed_name in self.feeds_names:
+                url = self.default_feed + '&interest_name=' + feed_name
+                kwargs = {'feed_name': feed_name}
                 yield http.Request(url=url,
                                    callback=self.parse,
                                    dont_filter=True,
@@ -167,8 +167,8 @@ class ZenSpider(Spider):
         """Возвращает валидный словарь для pipelines"""
         # Создаем объект ZenFeed, из значений полученых пауком, и записываем в item['zen_feed']
         # и удаляем item['feed_subscribers']
-        item['feed'] = ZenFeed(feed=item['feed'],
+        item['feed'] = ZenFeed(feed_name=item.pop('feed_name', None),
                                feed_subscribers=item.pop('feed_subscribers', None))
         # Заменяем списко str - kwargs['interests'] на список объектов ZenFeed
-        item['interests'] = [ZenFeed(feed=interest) for interest in item['interests']]
+        item['interests'] = [ZenFeed(feed_name=interest) for interest in item['interests']]
         return item

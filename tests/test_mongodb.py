@@ -97,11 +97,11 @@ class TestDbServices:
 
 class TestItems:
     """"""
-    parsed_item1 = dict(feed='feed1', feed_subscribers=100, title='title1', link='https://zen.yandex.ru/',
+    parsed_item1 = dict(feed_name='feed1', feed_subscribers=100, title='title1', link='https://zen.yandex.ru/',
                         public_date=200, time_public_to_parse=300, subscribers=400, audience=500, likes=600,
                         comments=700, interests=['feed1', 'feed2', 'feed3'], visitors=800, reads=900, read_time=1000,
                         length=1100, num_images=1200)
-    parsed_item2 = dict(feed='feed2', feed_subscribers=100, title='title1', link='https://zen.yandex.ru/2',
+    parsed_item2 = dict(feed_name='feed2', feed_subscribers=100, title='title1', link='https://zen.yandex.ru/2',
                         public_date=200, time_public_to_parse=300, subscribers=400, audience=500, likes=600,
                         comments=700, interests=['feed1', 'feed2', 'feed3'], visitors=800, reads=900, read_time=1000,
                         length=1100, num_images=1200)
@@ -117,6 +117,6 @@ class TestItems:
         assert len(articles) == 2
         assert articles[0].title == 'title1'
         assert len(feeds) == 3
-        assert next(f for f in feeds if f.feed == 'feed1').feed_subscribers == 100
-        assert next(f for f in feeds if f.feed == 'feed2').feed_subscribers == 100
-        assert next(f for f in feeds if f.feed == 'feed3').feed_subscribers is None
+        assert next(f for f in feeds if f.feed_name == 'feed1').feed_subscribers == 100
+        assert next(f for f in feeds if f.feed_name == 'feed2').feed_subscribers == 100
+        assert next(f for f in feeds if f.feed_name == 'feed3').feed_subscribers is None
