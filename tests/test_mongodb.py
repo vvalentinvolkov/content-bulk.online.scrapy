@@ -3,7 +3,7 @@ from mongoengine import StringField, connect, disconnect, ListField, ReferenceFi
 from scrapy.exceptions import CloseSpider, DropItem
 
 from src.default import db_services
-from src.default.items import ZenArticle, ZenFeed, MyDocument
+from src.default.models import ZenArticle, ZenFeed, MyDocument
 from src.default.spiders.zen_spider import ZenSpider
 
 

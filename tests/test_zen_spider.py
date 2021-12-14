@@ -6,7 +6,7 @@ import requests
 from scrapy.crawler import CrawlerProcess
 from scrapy.exceptions import CloseSpider
 
-from src.default.items import ZenFeed
+from src.default.models import ZenFeed
 from src.default.spiders.zen_spider import ZenSpider
 
 

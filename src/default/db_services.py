@@ -1,32 +1,16 @@
 import logging
-from typing import Union
+from typing import Union, Type
 
 import mongoengine
-from mongoengine import ValidationError, NotUniqueError, FieldDoesNotExist, ConnectionFailure, Document
+from mongoengine import ValidationError, NotUniqueError, FieldDoesNotExist, ConnectionFailure
 from scrapy.exceptions import CloseSpider, DropItem
 
-from .items import MyDocument
+from .models import MyDocument
 
 
-def db_connect(db, host, port):
-    """Подключение к MongoDb через mongoengine - при ConnectionFailure подымает CloseSpider"""
-    try:
-        client = mongoengine.connect(db=db, host=host, port=port)
-        client.admin.command('ping')
-        logging.info(f"Connect to {db} database")
-    except ConnectionFailure:
-        try:
-            client = mongoengine.get_connection()
-            client.admin.command('ping')
-            logging.info(f"Connect to {db} database (created before)")
-        except ConnectionFailure:
-            logging.error(f'MongoDb is not available')
-            raise CloseSpider
-
-
-def db_disconnect():
-    logging.info(f'Mongoengine - disconnect(alias=default)')
-    mongoengine.disconnect()
+def get_all_scalar(doc: Type[MyDocument], *fields) -> list:
+    """Возвращает поля fields от всех объектов типа doc"""
+    return list(doc.objects.scalar(*fields))
 
 
 def db_save(item: Union[dict, MyDocument], document_class: type = None):
@@ -52,4 +36,6 @@ def db_save(item: Union[dict, MyDocument], document_class: type = None):
     except FieldDoesNotExist:
         logging.error('Item with extra values')
         raise DropItem
+
+
 
