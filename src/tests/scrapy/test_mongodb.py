@@ -1,8 +1,9 @@
 import pytest
-from mongoengine import StringField, connect, disconnect, ListField, ReferenceField
+from mongoengine import StringField, ListField, ReferenceField, ConnectionFailure, FieldDoesNotExist, ValidationError, \
+    NotUniqueError
 from scrapy.exceptions import CloseSpider, DropItem
 
-from src.default import db_services
+from src.services import db_services
 from src.default.models import ZenArticle, ZenFeed, MyDocument
 from src.default.spiders.zen_spider import ZenSpider
 
@@ -30,18 +31,18 @@ class TestDbServices:
         assert SomeItem.objects().first().first_field == 'first_value'
 
     def test_db_save_with_db_not_available(self):
-        """тест: сохранение при недоступной бд поднимает CloseSpider"""
+        """тест: сохранение при недоступной бд поднимает ConnectionFailure"""
         item = {'first_field': 'first_value', 'second_field': 'second_value'}
-        with pytest.raises(CloseSpider):
+        with pytest.raises(ConnectionFailure):
             db_services.db_save(document_class=SomeItem, item=item)
 
-    def test_db_save_with_extra_missing_value_in_item(self, connect_to_mock_mongo):
+    def test_db_save_with_extra_value_in_item(self, connect_to_mock_mongo):
         """тест: сохранение словаря с лишними или недостающими значениями поднимает DropItem"""
         item = {'first_field': 'first_value',
                  'second_field': 'second_value',
                  'extra_field': 'some_extra_value'}
 
-        with pytest.raises(DropItem):
+        with pytest.raises(FieldDoesNotExist):
             db_services.db_save(document_class=SomeItem, item=item)
 
     def test_db_save_with_not_valid_item(self, connect_to_mock_mongo):
@@ -52,7 +53,7 @@ class TestDbServices:
                  'second_field': None}
         item3 = {'second_field': 'second_value'}
 
-        with pytest.raises(DropItem):
+        with pytest.raises(ValidationError):
             db_services.db_save(document_class=SomeItem, item=item1)
             db_services.db_save(document_class=SomeItem, item=item2)
             db_services.db_save(document_class=SomeItem, item=item3)
@@ -65,7 +66,7 @@ class TestDbServices:
                  'second_field': 'other_value'}
 
         db_services.db_save(document_class=SomeItem, item=item1)
-        with pytest.raises(DropItem):
+        with pytest.raises(NotUniqueError):
             db_services.db_save(document_class=SomeItem, item=item2)
 
     def test_cascade_save_for_many_to_many(self, connect_to_mock_mongo):

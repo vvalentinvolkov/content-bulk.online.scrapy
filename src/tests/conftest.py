@@ -1,8 +1,10 @@
+import asyncio
+
 import pytest
 from mongoengine import connect, disconnect
+from motor.motor_asyncio import AsyncIOMotorClient
 
 from src.default.spiders.zen_spider import ZenSpider
-
 
 @pytest.fixture()
 def zen_spider():

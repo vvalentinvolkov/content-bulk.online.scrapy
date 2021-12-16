@@ -2,8 +2,11 @@ import logging
 
 import mongoengine
 from mongoengine import ConnectionFailure
+from pymongo.errors import ServerSelectionTimeoutError
 from scrapy import signals
 from scrapy.exceptions import CloseSpider
+
+from src.services import db_services
 
 logger = logging.getLogger(__name__)
 
@@ -19,17 +22,11 @@ def db_connect(spider):
     port = spider.crawler.settings.get('DB_PORT')
     db = spider.crawler.settings.get('DB_NAME')
     try:
-        client = mongoengine.connect(db=db, host=host, port=port)
-        client.admin.command('ping')
+        db_services.mongo_connect(db=db, host=host, port=port)
         logger.info(f"Connect to {db} database")
-    except ConnectionFailure:
-        try:
-            client = mongoengine.get_connection()
-            client.admin.command('ping')
-            logger.info(f"Connect to {db} database (created before)")
-        except ConnectionFailure:
-            logger.error(f'MongoDb is not available')
-            raise CloseSpider
+    except (ConnectionFailure, ServerSelectionTimeoutError):
+        logger.error(f'MongoDb is not available')
+        raise CloseSpider
 
 
 def db_disconnect(spider, reason):

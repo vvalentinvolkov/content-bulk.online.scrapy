@@ -1,15 +1,14 @@
-import logging
-import os
 from datetime import datetime
 import re
 
-from scrapy import http, Spider, signals
+from scrapy import http, Spider
 from scrapy.exceptions import CloseSpider
 from scrapy.http import TextResponse
 from collections import Counter
 
 
-from .. import re_handler, db_services, db
+from .. import re_handler, db
+from ...services import db_services
 from ..models import ZenArticle, ZenFeed
 
 
