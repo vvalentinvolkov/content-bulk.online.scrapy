@@ -1,13 +1,14 @@
 import pytest
 from mongoengine import StringField, ListField, ReferenceField, ConnectionFailure, FieldDoesNotExist, ValidationError, \
-    NotUniqueError
+    NotUniqueError, Document
 
 from src.db_services import db_services
-from src.db_services.models import ZenArticle, ZenFeed, MyDocument
+from src.db_services.models import ZenArticle, ZenFeed
+from src.default.pipelines import MongoPipeline
 from src.default.spiders.zen_spider import ZenSpider
 
 
-class SomeItem(MyDocument):
+class SomeItem(Document):
     first_field = StringField(required=True, unique=True)
     second_field = StringField()
 
@@ -68,38 +69,6 @@ class TestDbServices:
         with pytest.raises(NotUniqueError):
             db_services.db_save(document_class=SomeItem, item=item2)
 
-    def test_cascade_save_for_many_to_many(self, connect_to_mock_mongo):
-        """тест: при сохранении документа с many-to-many полем: ListField(ReferenceField(<Document>))
-        сохраняет связанные документы"""
-        class RefItem(MyDocument):
-            field = StringField(primary_key=True)
-
-            meta = {'cascade': True,
-                    'force_insert': True}
-
-        class BaseItem(MyDocument):
-            ref_field = ReferenceField(RefItem, default=RefItem(field='default'))
-            field = ListField(ReferenceField(RefItem), required=True)
-
-            def save(self, *args, **kwargs):
-                for ref in self.field:
-                    ref.save()
-                return super().save(*args, **kwargs)
-
-            meta = {'cascade': True}
-
-        ref_item1 = RefItem(field='ref_item1')
-        ref_item2 = RefItem(field='ref_item2')
-
-        base_item = BaseItem(ref_field=ref_item1, field=[ref_item1, ref_item2])
-
-        db_services.db_save(base_item)
-        base_items = BaseItem.objects.all()
-        ref_items = RefItem.objects.all()
-
-        assert len(base_items) == 1
-        assert len(ref_items) == 2
-
 
 class TestItems:
     """"""
@@ -115,14 +84,18 @@ class TestItems:
     def test_save_zen_article_with_creating_zen_feed(self, connect_to_mock_mongo):
         """тест: при сохранении ZenArticle создаются и сохраняются обхекты feed
         из атрибутов feed и interests, без перезаписи уже существующий ZenFeed"""
-        db_services.db_save(document_class=ZenArticle, item=ZenSpider.load_item(self.parsed_item1))
-        db_services.db_save(document_class=ZenArticle, item=ZenSpider.load_item(self.parsed_item2))
+        spider_res_gen1 = ZenSpider.load_item(self.parsed_item1)
+        spider_res_gen2 = ZenSpider.load_item(self.parsed_item2)
+        MongoPipeline().process_item(item=next(spider_res_gen1))
+        MongoPipeline().process_item(item=next(spider_res_gen1))
+        MongoPipeline().process_item(item=next(spider_res_gen2))
+        MongoPipeline().process_item(item=next(spider_res_gen2))
+
         articles = ZenArticle.objects.all()
         feeds = ZenFeed.objects.all()
 
         assert len(articles) == 2
         assert articles[0].title == 'title1'
-        assert len(feeds) == 3
+        assert len(feeds) == 2
         assert next(f for f in feeds if f.feed_name == 'feed1').feed_subscribers == 100
         assert next(f for f in feeds if f.feed_name == 'feed2').feed_subscribers == 100
-        assert next(f for f in feeds if f.feed_name == 'feed3').feed_subscribers is None

@@ -6,10 +6,9 @@ from scrapy.exceptions import CloseSpider
 from scrapy.http import TextResponse
 from collections import Counter
 
-
 from .. import re_handler, db
-from ...services import db_services
-from ..models import ZenArticle, ZenFeed
+from ...db_services import db_services
+from src.db_services.models import ZenArticle, ZenFeed
 
 
 class ZenSpider(Spider):
@@ -21,7 +20,7 @@ class ZenSpider(Spider):
     feeds_names = []
 
     custom_settings = {
-        'JOBDIR': 'default/crawls/ZenSpider',   # Директория, для хранения состояние паука (FP спаршеных ссылок)
+        'JOBDIR': 'default/crawls/ZenSpider',  # Директория, для хранения состояние паука (FP спаршеных ссылок)
         'DB_NAME': 'zen_articles',
         'PARSE_CYCLES': 1,  # Колличество проходов по списку фидов (каждый фид содержит около 30 ссылок)
         'ITEM_CLASS': ZenArticle  # Класс, унаследованый от Mongoengine.Document, для сохранения MongoPipeline
@@ -35,7 +34,7 @@ class ZenSpider(Spider):
             _feeds = db_services.get_all_scalar(ZenFeed, 'feed_name')
         if len(_feeds) == 0:
             self.logger.error('An empty feeds set. Add some ZenFeed objects in a database or'
-                          ' set some feeds split by a space via setting["ZEN_FEEDS_TO_PARSE"]')
+                              ' set some feeds split by a space via setting["ZEN_FEEDS_TO_PARSE"]')
             raise CloseSpider
         return _feeds
 
@@ -119,9 +118,9 @@ class ZenSpider(Spider):
         except KeyError as e:
             self.logger.warning(f'Cant get from channel_json - {e}')
             return None
-        return http.Request(url=top_comments_link,
-                            callback=self.parse_top_comments,
-                            cb_kwargs=kwargs)
+        yield http.Request(url=top_comments_link,
+                           callback=self.parse_top_comments,
+                           cb_kwargs=kwargs)
 
     def parse_top_comments(self, response: TextResponse, **kwargs):
         """Получение динамических данных статьи и интересов из комментариев"""
@@ -141,9 +140,9 @@ class ZenSpider(Spider):
         except KeyError as e:
             self.logger.warning(f'Cant get from top_comments_json - {e}')
             return None
-        return http.Request(url=kwargs['link'],
-                            callback=self.parse_article,
-                            cb_kwargs=kwargs)
+        yield http.Request(url=kwargs['link'],
+                           callback=self.parse_article,
+                           cb_kwargs=kwargs)
 
     def parse_article(self, response, **kwargs):
         """Получение данных самой статьи - селекторы содержат функции-обработчики в css_handler.
@@ -159,15 +158,12 @@ class ZenSpider(Spider):
             response.css('.article-render[itemprop = "articleBody"] > p *::text').getall())
         kwargs['num_images'] = re_handler.get_num_images(
             response.css('.article-render[itemprop = "articleBody"] .article-image-item__image').getall())
-        return self.load_item(kwargs)
+        yield self.load_item(kwargs)
 
     @staticmethod
-    def load_item(item: dict) -> dict:
-        """Возвращает валидный словарь для pipelines"""
-        # Создаем объект ZenFeed, из значений полученых пауком, и записываем в item['zen_feed']
-        # и удаляем item['feed_subscribers']
-        item['feed'] = ZenFeed(feed_name=item.pop('feed_name', None),
-                               feed_subscribers=item.pop('feed_subscribers', None))
-        # Заменяем списко str - kwargs['interests'] на список объектов ZenFeed
-        item['interests'] = [ZenFeed(feed_name=interest) for interest in item['interests']]
-        return item
+    def load_item(kwargs) -> dict:
+        """Возвращает словарь: тип документа - валидный словарь для pipelines"""
+        # Создаем объект ZenFeed, из item['feed_name'] и item['feed_subscribers'] и удаляем их из kwargs
+        yield {ZenFeed: {'feed_name': kwargs.pop('feed_name', None),
+                         'feed_subscribers': kwargs.pop('feed_subscribers', None)}}
+        yield {ZenArticle: kwargs}

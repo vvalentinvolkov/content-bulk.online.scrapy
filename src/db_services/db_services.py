@@ -4,8 +4,6 @@ from typing import Union, Type
 import mongoengine
 from mongoengine import Document
 
-from src.db_services.models import MyDocument
-
 
 def mongo_connect(db: str, host: str, port: int):
     db = mongoengine.connect(db=db, host=host, port=port)

@@ -3,7 +3,7 @@ import scrapy
 import requests
 from scrapy.exceptions import CloseSpider
 
-from src.db_services.models import ZenFeed
+from src.db_services.models import ZenFeed, ZenArticle
 
 
 class TestZenSpiderUnits:
@@ -70,8 +70,8 @@ class TestZenSpiderUnits:
                 '&clid=300&channel_name=adstella').text,
             encoding='utf_8')
 
-        request = zen_spider.parse_channel(response, link='https://zen.yandex.ru/media/'
-                                                     'adstella/7-planet-pohojih-na-zemliu-611262e8ccb50c2963f547a4')
+        request = next(zen_spider.parse_channel(response, link='https://zen.yandex.ru/media/'
+                                                     'adstella/7-planet-pohojih-na-zemliu-611262e8ccb50c2963f547a4'))
         assert request.url == 'https://zen.yandex.ru/api/comments/top-comments?withUser=true&retryNum=0&' \
                               'manualRetry=false&commentId=0&withProfile=true&publisherId=607dbfe0a7a0b86de23291dc&' \
                               'documentId=native%3A611262e8ccb50c2963f547a4&commentCount=100'
@@ -90,8 +90,9 @@ class TestZenSpiderUnits:
                 'manualRetry=false&commentId=0&withProfile=true&publisherId=607dbfe0a7a0b86de23291dc&'
                 'documentId=native:611262e8ccb50c2963f547a4&commentCount=100').text,
             encoding='utf_8')
-        request = zen_spider.parse_top_comments(response, link='https://zen.yandex.ru/media/'
-                                                           'adstella/7-planet-pohojih-na-zemliu-611262e8ccb50c2963f547a4')
+        request = next(zen_spider.parse_top_comments(
+            response,
+            link='https://zen.yandex.ru/media/adstella/7-planet-pohojih-na-zemliu-611262e8ccb50c2963f547a4'))
 
         assert request.cb_kwargs['likes'] is not None
         assert request.cb_kwargs['comments'] is not None
@@ -104,12 +105,15 @@ class TestZenSpiderUnits:
                               '7-planet-pohojih-na-zemliu-611262e8ccb50c2963f547a4').text,
             encoding='utf-8')
         res = zen_spider.parse_article(response, feed_name='feed_name1', feed_subscribers=10, interests=['feed1', 'feed2'])
-        assert res['visitors'] is not None
-        assert res['reads'] is not None
-        assert res['read_time'] is not None
-        assert res['length'] is not None
-        assert res['num_images'] is not None
-        assert res['feed'].feed_name == 'feed_name1'
-        assert res['feed'].feed_subscribers == 10
-        assert res['interests'][0].feed_name == 'feed1'
-        assert res['interests'][1].feed_name == 'feed2'
+        items = [item for item in next(res)]
+        feed = items[0][ZenFeed]
+        article = items[1][ZenArticle]
+        assert article['visitors'] is not None
+        assert article['reads'] is not None
+        assert article['read_time'] is not None
+        assert article['length'] is not None
+        assert article['num_images'] is not None
+        assert article['interests'][0] == 'feed1'
+        assert article['interests'][1] == 'feed2'
+        assert feed['feed_name'] == 'feed_name1'
+        assert feed['feed_subscribers'] == 10

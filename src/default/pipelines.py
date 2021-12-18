@@ -1,4 +1,4 @@
-from mongoengine import ValidationError, NotUniqueError, FieldDoesNotExist
+from mongoengine import ValidationError, NotUniqueError, FieldDoesNotExist, Document
 from pymongo.errors import ConnectionFailure
 from scrapy import Spider
 from scrapy.exceptions import CloseSpider, DropItem
@@ -12,11 +12,12 @@ class MongoPipeline:
 
     logger = logging.getLogger('MongoPipeline')
 
-    def process_item(self, item: dict, spider: Spider):
+    def process_item(self, item: dict):
         """Вызывается для каждого item"""
-        if spider.settings.get('ITEM_CLASS'):
+        document_class, values = next(iter(item.items()))
+        if issubclass(document_class, Document):
             try:
-                db_services.db_save(document_class=spider.settings.get('ITEM_CLASS'), item=item)
+                db_services.db_save(document_class=document_class, item=values)
             except ConnectionFailure:
                 logging.error('MongoDb is not available - closing the spider')
                 raise CloseSpider
@@ -30,5 +31,5 @@ class MongoPipeline:
                 logging.error('Item with extra values')
                 raise DropItem
             return item
-        self.logger.error('spider.settings["ITEM_CLASS"] is None')
+        self.logger.error(f'load_item must return dict(<Document>: dict). Get {document_class}')
         raise CloseSpider
