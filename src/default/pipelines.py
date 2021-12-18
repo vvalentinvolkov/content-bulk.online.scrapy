@@ -4,7 +4,7 @@ from scrapy import Spider
 from scrapy.exceptions import CloseSpider, DropItem
 import logging
 
-from ..services import db_services
+from ..db_services import db_services
 
 
 class MongoPipeline:

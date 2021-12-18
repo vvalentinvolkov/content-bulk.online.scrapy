@@ -1,10 +1,9 @@
 import pytest
 from mongoengine import StringField, ListField, ReferenceField, ConnectionFailure, FieldDoesNotExist, ValidationError, \
     NotUniqueError
-from scrapy.exceptions import CloseSpider, DropItem
 
-from src.services import db_services
-from src.default.models import ZenArticle, ZenFeed, MyDocument
+from src.db_services import db_services
+from src.db_services.models import ZenArticle, ZenFeed, MyDocument
 from src.default.spiders.zen_spider import ZenSpider
 
 
@@ -81,6 +80,12 @@ class TestDbServices:
         class BaseItem(MyDocument):
             ref_field = ReferenceField(RefItem, default=RefItem(field='default'))
             field = ListField(ReferenceField(RefItem), required=True)
+
+            def save(self, *args, **kwargs):
+                for ref in self.field:
+                    ref.save()
+                return super().save(*args, **kwargs)
+
             meta = {'cascade': True}
 
         ref_item1 = RefItem(field='ref_item1')

@@ -1,13 +1,9 @@
-import logging
-
 import pytest
 import scrapy
 import requests
-from scrapy.crawler import CrawlerProcess
 from scrapy.exceptions import CloseSpider
 
-from src.default.models import ZenFeed
-from src.default.spiders.zen_spider import ZenSpider
+from src.db_services.models import ZenFeed
 
 
 class TestZenSpiderUnits:
