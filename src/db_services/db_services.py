@@ -10,6 +10,11 @@ def mongo_connect(db: str, host: str, port: int):
     db.admin.command('ping')
 
 
+def mongo_mock_connect():
+    db = mongoengine.connect('mongoenginetest', host='mongomock://localhost')
+    db.admin.command('ping')
+
+
 def get_all_scalar(doc: Type[Document], *fields) -> list:
     """Возвращает поля fields от всех объектов типа doc"""
     return list(doc.objects.scalar(*fields))

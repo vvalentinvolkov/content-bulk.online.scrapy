@@ -1,20 +1,28 @@
-import os
-
 from flask import Flask
 from flask_restful import Api
 
-from src.rest_api.resources.bulk import Bulk
-
-#Database
-DB_HOST = os.environ.get('DB_HOST', default='localhost')
-DB_PORT = int(os.environ.get('DB_PORT', default=27017))
-DB_NAME = os.environ.get('DB_NAME', default='default_articles')
+from src.rest_api import db
+from src.rest_api.resources import ZenArticlesResources
 
 
-app = Flask(__name__)
-api = Api(app)
+def create_app() -> Flask:
+    """Создает объект app Flask, получая конфиг из файла config.py
+    и обновляя значения конфига из необязательных аргументов"""
+    app = Flask(__name__)
+    app.config.from_pyfile('config.py')
+    return app
 
-api.add_resource(Bulk, '/bulk')
 
-if __name__ == '__main__':
-    app.run(debug=True)
+def create_api() -> Api:
+    app = create_app()
+
+    with app.app_context():
+        db.init_db()
+
+    api = Api(app)
+    api.add_resource(ZenArticlesResources, '/bulk/zen_articles')
+
+    return api
+
+# if __name__ == '__main__':
+#     app.run(debug=True)
