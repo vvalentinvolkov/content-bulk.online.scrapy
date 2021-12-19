@@ -6,7 +6,7 @@ from pymongo.errors import ServerSelectionTimeoutError
 from scrapy import signals
 from scrapy.exceptions import CloseSpider
 
-from src.db_services import db_services
+from src.services import db_services
 
 logger = logging.getLogger(__name__)
 

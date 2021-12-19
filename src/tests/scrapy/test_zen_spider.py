@@ -3,7 +3,7 @@ import scrapy
 import requests
 from scrapy.exceptions import CloseSpider
 
-from src.db_services.models import ZenFeed, ZenArticle
+from src.services.models import ZenFeed, ZenArticle
 
 
 class TestZenSpiderUnits:

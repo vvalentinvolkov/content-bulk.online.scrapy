@@ -1,4 +1,4 @@
-from src.rest_api.db_services import get_query_set
+from src.services.db_services import get_query_set
 
 
 def test_get_query_set_fields(connect_to_mock_mongo, set_test_document):
@@ -62,17 +62,16 @@ def test_get_query_set_filters(connect_to_mock_mongo, set_test_document):
     """тест: фильтры по значениям полей"""
     A = set_test_document(10)
 
-    res = get_query_set(A, limit=100,
-                        filters={'fa_const__exact': 'const1', 'fa_int__lt': 3, 'fa_int__gt': 0})
+    res = get_query_set(A, limit=100,filters='fa_const__exact__const1 fa_int__lt__3 fa_int__gt__0')
     assert len(res) == 2
     assert res[0].fa_const == 'const1'
     assert res[0].fa_int == 1
 
-    res = get_query_set(A, limit=100, filters={'fa_const__exact': 'const3', 'fa_int__lt': 3})
+    res = get_query_set(A, limit=100, filters='fa_const__exact__const3 fa_int__lt__3')
     assert len(res) == 0
 
-    res = get_query_set(A, limit=100, filters={'fa_int__notcorrect': 3})
+    res = get_query_set(A, limit=100, filters='fa_int__notcorrect__3')
     assert len(res) == 10
 
-    res = get_query_set(A, limit=100, filters={'notfield__lt': 3})
+    res = get_query_set(A, limit=100, filters='notfield__lt__3')
     assert len(res) == 10

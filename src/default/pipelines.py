@@ -1,10 +1,9 @@
 from mongoengine import ValidationError, NotUniqueError, FieldDoesNotExist, Document
 from pymongo.errors import ConnectionFailure
-from scrapy import Spider
 from scrapy.exceptions import CloseSpider, DropItem
 import logging
 
-from ..db_services import db_services
+from ..services import db_services
 
 
 class MongoPipeline:

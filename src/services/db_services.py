@@ -1,11 +1,36 @@
 import logging
-from typing import Optional, Iterable, Type
-from mongoengine import QuerySet, Q, Document, InvalidQueryError
+from typing import Union, Type, Optional, Iterable
+
+import mongoengine
+from mongoengine import Document, QuerySet, InvalidQueryError, Q
 from mongoengine.queryset.transform import MATCH_OPERATORS
 
-logger = logging.getLogger(__name__)
 
-MAX_LIMIT = 20
+def mongo_connect(db: str, host: str, port: int):
+    db = mongoengine.connect(db=db, host=host, port=port)
+    db.admin.command('ping')
+
+
+def mongo_mock_connect():
+    db = mongoengine.connect('mongoenginetest', host='mongomock://localhost')
+    db.admin.command('ping')
+
+
+def get_all_scalar(doc: Type[Document], *fields) -> list:
+    """Возвращает поля fields от всех объектов типа doc"""
+    return list(doc.objects.scalar(*fields))
+
+
+def db_save(item: Union[dict, Document], document_class: type = None):
+    """Сохраняет документ и все вложенные документы в бд
+    Если item экземпляр Document - сохраняет его
+    Если item - dict, требуется document_class для содания экземпляра перед сохранением"""
+    if issubclass(type(item), Document):
+        item.save()
+    elif document_class:
+        document_class(**item).save()
+    else:
+        logging.error('db_save(...) need item: Document or document_class: type(Document)')
 
 
 def get_query_set(
@@ -14,7 +39,7 @@ def get_query_set(
         limit: Optional[int] = 1,
         page: Optional[int] = 0,
         sort_field: Optional[str] = None,
-        filters: Optional[dict] = None) -> Optional[QuerySet]:
+        filters: Optional[str] = None) -> Optional[QuerySet]:
     """Возвращает queryset. По умолчанию возвращает первый документ
 
         :fields: возвращаемые поля
@@ -25,6 +50,8 @@ def get_query_set(
 
         Сортировка и фильтрация происходит по списку полей fields, а не по всем полям"""
 
+    MAX_LIMIT = 20
+
     # Выбираем из данных только существующие у модели поля. Если fields пустой - берем все поля
     fields = set(fields) & set(document._fields.keys()) if fields else set(document._fields.keys())
 
@@ -32,7 +59,7 @@ def get_query_set(
     page = 0 if not page else page
     slice_ = slice(page * limit, page * limit + limit)
 
-    if sort_field:
+    if sort_field and '__' in sort_field:
         field_, direct_ = sort_field.split('__')
         if field_ in fields:
             if direct_ == 'a':
@@ -47,11 +74,13 @@ def get_query_set(
     # Убираем пары с неуказаными полеми или с операторами не из MATCH_OPERATORS
     qc = Q()
     if filters:
-        for field_filter, value in filters.items():
-            if '__' in field_filter:
-                field_, filter_ = field_filter.split('__')
-                if field_ in fields and filter_ in MATCH_OPERATORS:
-                    qc = qc & Q(**{field_filter: value})
+        for field_filt_value in filters.split(' '):
+            try:
+                field, filt, value = field_filt_value.split('__')
+            except ValueError:
+                continue
+            if field in fields and filt in MATCH_OPERATORS:
+                qc = qc & Q(**{f'{field}__{filt}': value})
 
     try:
         return document.objects(qc).only(*fields).order_by(sort_field)[slice_]

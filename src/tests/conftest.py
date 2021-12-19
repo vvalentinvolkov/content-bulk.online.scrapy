@@ -1,11 +1,8 @@
-from typing import Type
-
 import pytest
 from mongoengine import connect, disconnect, Document, StringField, IntField, ListField
 
 from src.default.spiders.zen_spider import ZenSpider
 from src.rest_api import app, db
-from src.rest_api.resources import ZenArticlesResources
 
 
 @pytest.fixture
@@ -42,7 +39,7 @@ def connect_to_mock_mongo():
 
 @pytest.fixture
 def client():
-    api = app.create_api()
+    api = app.api
     with api.app.test_client() as client:
         with api.app.app_context():
             db.init_db()

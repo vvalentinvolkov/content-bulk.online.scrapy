@@ -7,8 +7,8 @@ from scrapy.http import TextResponse
 from collections import Counter
 
 from .. import re_handler, db
-from ...db_services import db_services
-from src.db_services.models import ZenArticle, ZenFeed
+from ...services import db_services
+from src.services.models import ZenArticle, ZenFeed
 
 
 class ZenSpider(Spider):

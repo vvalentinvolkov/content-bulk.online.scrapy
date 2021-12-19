@@ -2,8 +2,8 @@ import pytest
 from mongoengine import StringField, ListField, ReferenceField, ConnectionFailure, FieldDoesNotExist, ValidationError, \
     NotUniqueError, Document
 
-from src.db_services import db_services
-from src.db_services.models import ZenArticle, ZenFeed
+from src.services import db_services
+from src.services.models import ZenArticle, ZenFeed
 from src.default.pipelines import MongoPipeline
 from src.default.spiders.zen_spider import ZenSpider
 

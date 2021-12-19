@@ -1,10 +1,10 @@
 import logging
 
-from flask import Flask, current_app
+from flask import current_app
 from mongoengine import ConnectionFailure
 from pymongo.errors import ServerSelectionTimeoutError
 
-from src.db_services import db_services
+from src.services import db_services
 
 logger = logging.getLogger(__name__)
 
