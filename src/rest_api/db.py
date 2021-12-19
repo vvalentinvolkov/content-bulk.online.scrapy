@@ -1,22 +1,18 @@
-import asyncio
 import logging
+
+from mongoengine import ConnectionFailure
+from pymongo.errors import ServerSelectionTimeoutError
+
+from src.db_services import db_services
 
 logger = logging.getLogger(__name__)
 
 
-async def init_mongo(host: str, port: int, db: str) -> AsyncIOMotorDatabase:
-    logger.info(f'init mongo')
-    loop = asyncio.get_event_loop()
-    conn = AsyncIOMotorClient(host=host, port=port, io_loop=loop)
-    return conn[db]
-
-
-async def setup_mongo(app: web.Application) -> None:
-    config = app['config']
-    app['db'] = await init_mongo(app, config.MONGODB_URI)
-
-    async def close_mongo(app: web.Application) -> None:
-        logger.info('close mongo')
-        app['db'].client.close()
-
-    app.on_cleanup.append(close_mongo)
+def db_connect(db: str, host: str, port: int):
+    """Подключение к MongoDb через mongoengine - при ConnectionFailure подымает CloseSpider"""
+    try:
+        db_services.mongo_connect(db=db, host=host, port=port)
+        logger.info(f"Connect to {db} database")
+    except (ConnectionFailure, ServerSelectionTimeoutError):
+        logger.error(f'MongoDb is not available')
+        raise ConnectionFailure

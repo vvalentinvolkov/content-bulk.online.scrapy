@@ -41,7 +41,7 @@ class ZenFeed(Document):
 
 class ZenArticle(CommonArticleItem):
     source = StringField(required=True, default='zen')
-    interests = ListField(required=True)
+    interests = ListField(required=True, null=True, default=None)
     audience = IntField()
     visitors = IntField(required=True)
     read_time = IntField(required=True)
