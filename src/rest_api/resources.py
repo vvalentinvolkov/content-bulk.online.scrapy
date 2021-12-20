@@ -1,7 +1,7 @@
 from typing import Iterable, Optional
 
 from flask import request
-from flask_restful import Resource, reqparse
+from flask_restful import Resource, reqparse, fields, abort
 
 from src.services import db_services
 from src.services.models import ZenArticle, ZenFeed
@@ -12,22 +12,23 @@ MODEL_CLASSES = {
 }
 
 
-class BulkResources(Resource):
+class BulkResource(Resource):
+
+    # TODO: Убрать _id поле из выдачи бд
 
     def __init__(self):
         self.parser = reqparse.RequestParser()
-        self.parser.add_argument('fields', location='args', default=None)
-        self.parser.add_argument('limit', location='args', type=int, default=None)
-        self.parser.add_argument('page', location='args', type=int, default=None)
-        self.parser.add_argument('sort_field', location='args', default=None)
-        self.parser.add_argument('filters', location='args', default=None)
+        self.parser.add_argument('fields', location='args')
+        self.parser.add_argument('limit', location='args', type=int)
+        self.parser.add_argument('page', location='args', type=int)
+        self.parser.add_argument('sort_field', location='args')
+        self.parser.add_argument('filters', location='args')
 
     def get(self, document):
         model_class = MODEL_CLASSES.get(document)
         if not model_class:
-            pass
-            # FIXME: ошибка 404
+            return abort(404, msg=f'There is no {document}')
         else:
             args_ = self.parser.parse_args()
             query_set = db_services.get_query_set(document=model_class, **args_)
-            return query_set.to_json()
+            return query_set.to_json(), 200

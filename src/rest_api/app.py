@@ -2,7 +2,7 @@ from flask import Flask
 from flask_restful import Api
 
 from . import db
-from .resources import BulkResources
+from .resources import BulkResource
 
 
 def create_app(**kwargs) -> Flask:
@@ -20,5 +20,5 @@ with app.app_context():
     db.init_db()
 
 api = Api(app)
-api.add_resource(BulkResources, '/bulk/<string:document>')
+api.add_resource(BulkResource, '/bulk/<string:document>')
 
