@@ -1,7 +1,7 @@
 import pytest
 from scrapy.exceptions import DropItem
 
-from src.default.re_handler import *
+from src.scrapy_app.re_handler import *
 
 
 def test_get_visitors():

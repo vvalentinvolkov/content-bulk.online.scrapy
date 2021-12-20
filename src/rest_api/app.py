@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, '/home/bilkinegra/my_project/content-bulk.online.scrapy')
+
 from flask import Flask
 from flask_restful import Api
 

@@ -7,23 +7,25 @@ from scrapy.http import TextResponse
 from collections import Counter
 
 from .. import re_handler, db
-from ...services import db_services
+from src.services import db_services
 from src.services.models import ZenArticle, ZenFeed
 
 
 class ZenSpider(Spider):
-    """Spider для статей из ЯндексДзена"""
+    """Spider для статей из ЯндексДзена.
+        Для работы требуется минимум одно значение feed.
+        Берет feeds из бд или из setting['ZEN_FEEDS_TO_PARSE']='feed1 feed2 feed3'"""
 
-    name = 'ZenSpider'
+    name = 'ZenSpiderr'
     allowed_domains = ['zen.yandex.ru']
     default_feed = 'https://zen.yandex.ru/api/v3/launcher/export?country_code=ru&clid=300'
     feeds_names = []
 
     custom_settings = {
-        'JOBDIR': 'default/crawls/ZenSpider',  # Директория, для хранения состояние паука (FP спаршеных ссылок)
+        # TODO: удалять незаконченые queue при деплое новой версии
+        'JOBDIR': 'src/scrapy_app/crawls/ZenSpider',  # Директория, для хранения состояние паука (FP спаршеных ссылок)
         'DB_NAME': 'zen_articles',
         'PARSE_CYCLES': 1,  # Колличество проходов по списку фидов (каждый фид содержит около 30 ссылок)
-        'ITEM_CLASS': ZenArticle  # Класс, унаследованый от Mongoengine.Document, для сохранения MongoPipeline
     }
 
     def get_feeds_names(self):
@@ -34,7 +36,7 @@ class ZenSpider(Spider):
             _feeds = db_services.get_all_scalar(ZenFeed, 'feed_name')
         if len(_feeds) == 0:
             self.logger.error('An empty feeds set. Add some ZenFeed objects in a database or'
-                              ' set some feeds split by a space via setting["ZEN_FEEDS_TO_PARSE"]')
+                              ' set some feeds split by a space via setting["ZEN_FEEDS_TO_PARSE"]="feed1 feed2 feed3"')
             raise CloseSpider
         return _feeds
 
@@ -50,6 +52,7 @@ class ZenSpider(Spider):
         for _ in range(self.parse_cycles):
             if len(self.feeds_names) == 0:
                 self.feeds_names = self.get_feeds_names()
+                self.logger.info('Feed list: \n' + str(self.feeds_names))
             for feed_name in self.feeds_names:
                 url = self.default_feed + '&interest_name=' + feed_name
                 kwargs = {'feed_name': feed_name}
@@ -101,7 +104,7 @@ class ZenSpider(Spider):
         try:
             document_id = re.match(r'.*-(\w*)$', kwargs['link'])[1]
         except TypeError:
-            self.logger.info(f'Not zen article link - {kwargs["link"]}')
+            self.logger.debug(f'Not zen article link - {kwargs["link"]}')
             return None
         channel_json = response.json()
         try:
@@ -158,12 +161,17 @@ class ZenSpider(Spider):
             response.css('.article-render[itemprop = "articleBody"] > p *::text').getall())
         kwargs['num_images'] = re_handler.get_num_images(
             response.css('.article-render[itemprop = "articleBody"] .article-image-item__image').getall())
-        yield self.load_item(kwargs)
+        yield from self.load_item(kwargs)
 
     @staticmethod
     def load_item(kwargs) -> dict:
         """Возвращает словарь: тип документа - валидный словарь для pipelines"""
         # Создаем объект ZenFeed, из item['feed_name'] и item['feed_subscribers'] и удаляем их из kwargs
         yield {ZenFeed: {'feed_name': kwargs.pop('feed_name', None),
-                         'feed_subscribers': kwargs.pop('feed_subscribers', None)}}
+                          'feed_subscribers': kwargs.pop('feed_subscribers', None)}}
+
+        # Сохраняем ZenFeedы из интересов, без feed_subscribers
+        for interest in kwargs['interests']:
+            yield {ZenFeed: {'feed_name': interest}}
+
         yield {ZenArticle: kwargs}

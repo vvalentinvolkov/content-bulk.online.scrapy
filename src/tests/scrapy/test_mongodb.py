@@ -4,8 +4,8 @@ from mongoengine import StringField, ListField, ReferenceField, ConnectionFailur
 
 from src.services import db_services
 from src.services.models import ZenArticle, ZenFeed
-from src.default.pipelines import MongoPipeline
-from src.default.spiders.zen_spider import ZenSpider
+from src.scrapy_app.pipelines import MongoPipeline
+from src.scrapy_app.spiders.zen_spider import ZenSpider
 
 
 class SomeItem(Document):
@@ -13,6 +13,8 @@ class SomeItem(Document):
     second_field = StringField()
 
 
+# TODO: Вынести тесты дб наружу
+# TODO: мок подруб через переменные окружения
 class TestDbServices:
     """"""
     def test_db_save_dict(self, connect_to_mock_mongo):

@@ -6,6 +6,7 @@
     </content>
     <orderEntry type="jdk" jdkName="Python 3.9 (content-bulk.online.scrapy)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="scrapy_app" />
   </component>
   <component name="PyNamespacePackagesService">
     <option name="namespacePackageFolders">

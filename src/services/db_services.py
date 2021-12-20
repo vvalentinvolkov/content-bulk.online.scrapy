@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Union, Type, Optional, Iterable
 
 import mongoengine
@@ -6,12 +7,20 @@ from mongoengine import Document, QuerySet, InvalidQueryError, Q
 from mongoengine.queryset.transform import MATCH_OPERATORS
 
 
-def mongo_connect(db: str, host: str, port: int):
+def db_connect(db: str, host: str, port: int):
+    # FIXME: поставить параметр для подключения к мок бд
+    if False:
+        _mongo_mock_connect()
+    else:
+        _mongo_connect(db=db, host=host, port=port)
+
+
+def _mongo_connect(db: str, host: str, port: int):
     db = mongoengine.connect(db=db, host=host, port=port)
     db.admin.command('ping')
 
 
-def mongo_mock_connect():
+def _mongo_mock_connect():
     db = mongoengine.connect('mongoenginetest', host='mongomock://localhost')
     db.admin.command('ping')
 

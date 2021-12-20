@@ -1,6 +1,7 @@
 .venv
 .idea
-crawls
+src/scrapy_app/crawls
+src/scrapy_app/logs
 src/build
 src/project.egg-info
 src/setup.py

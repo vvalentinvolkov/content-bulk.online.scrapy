@@ -11,7 +11,7 @@ class MongoPipeline:
 
     logger = logging.getLogger('MongoPipeline')
 
-    def process_item(self, item: dict):
+    def process_item(self, item: dict, spider):
         """Вызывается для каждого item"""
         document_class, values = next(iter(item.items()))
         if issubclass(document_class, Document):

@@ -1,7 +1,7 @@
 import pytest
 from mongoengine import connect, disconnect, Document, StringField, IntField, ListField
 
-from src.default.spiders.zen_spider import ZenSpider
+from src.scrapy_app.spiders.zen_spider import ZenSpider
 from src.rest_api import app, db
 
 

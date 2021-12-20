@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/content-bulk.online.scrapy.iml" filepath="$PROJECT_DIR$/.idea/content-bulk.online.scrapy.iml" />
+      <module fileurl="file://$USER_HOME$/Рабочий стол/scrapy_app/.idea/scrapy_app.iml" filepath="$USER_HOME$/Рабочий стол/scrapy_app/.idea/scrapy_app.iml" />
     </modules>
   </component>
 </project>
