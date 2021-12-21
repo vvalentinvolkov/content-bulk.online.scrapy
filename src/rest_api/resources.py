@@ -1,10 +1,11 @@
-from typing import Iterable, Optional
+import logging
 
-from flask import request
-from flask_restful import Resource, reqparse, fields, abort
+from flask_restful import Resource, reqparse,  abort
 
 from src.services import db_services
 from src.services.models import ZenArticle, ZenFeed
+
+logger = logging.getLogger(__name__)
 
 MODEL_CLASSES = {
     'zen_articles': ZenArticle,
@@ -30,5 +31,6 @@ class BulkResource(Resource):
             return abort(404, msg=f'There is no {document}')
         else:
             args_ = self.parser.parse_args()
+            print('to db - ' + str(args_))
             query_set = db_services.get_query_set(document=model_class, **args_)
             return query_set.to_json(), 200

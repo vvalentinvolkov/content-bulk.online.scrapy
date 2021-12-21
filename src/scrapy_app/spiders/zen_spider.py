@@ -24,7 +24,6 @@ class ZenSpider(Spider):
     custom_settings = {
         # TODO: удалять незаконченые queue при деплое новой версии
         'JOBDIR': 'src/scrapy_app/crawls/ZenSpider',  # Директория, для хранения состояние паука (FP спаршеных ссылок)
-        'DB_NAME': 'zen_articles',
         'PARSE_CYCLES': 1,  # Колличество проходов по списку фидов (каждый фид содержит около 30 ссылок)
     }
 

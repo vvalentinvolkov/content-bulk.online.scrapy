@@ -55,7 +55,7 @@ def get_query_set(
         :limit: колличество возвращаемых документов
         :page: колличество пропущеных документов по limit штук
         :sort_field: поле сортировки
-        :filters: пары значений - поле__фильтр: значение для фильтра
+        :filters: 3 параметра - поле__фильтр__значение
 
         Сортировка и фильтрация происходит по списку полей fields, а не по всем полям"""
 
@@ -63,7 +63,6 @@ def get_query_set(
 
     # Выбираем из данных только существующие у модели поля. Если fields пустой - берем все поля
     fields = set(fields) & set(document._fields.keys()) if fields else set(document._fields.keys())
-
     limit = 1 if not limit else min(limit, MAX_LIMIT)
     page = 0 if not page else page
     slice_ = slice(page * limit, page * limit + limit)
@@ -92,6 +91,12 @@ def get_query_set(
                 qc = qc & Q(**{f'{field}__{filt}': value})
 
     try:
+        print('document - ' + str(document))
+        print('qc - ' + str(qc))
+        print('fields - ' + str(fields))
+        print('sort_field - ' + str(sort_field))
+        print('slice_ - ' + str(slice_))
         return document.objects(qc).only(*fields).order_by(sort_field)[slice_]
     except (InvalidQueryError, LookupError):
+        print('some error')
         return None
