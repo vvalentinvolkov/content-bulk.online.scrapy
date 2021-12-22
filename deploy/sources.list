@@ -1,5 +1,0 @@
-deb http://http.debian.net/debian bullseye main
-deb-src http://http.debian.net/debian bullseye main
-
-deb http://http.debian.net/debian bullseye-updates main
-deb-src http://http.debian.net/debian bullseye-updates main
