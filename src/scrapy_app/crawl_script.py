@@ -9,11 +9,11 @@ sys.path.insert(0, os.path.abspath('..'))
 
 from multiprocessing import Process
 
-from scrapy.crawler import CrawlerProcess, Crawler
+from scrapy.crawler import CrawlerProcess
 from . import settings as module_settings
 
 SPIDERS = {
-    'ZenSpider': ZenSpider
+    'ZenSpider': ZenSpider,
 }
 
 

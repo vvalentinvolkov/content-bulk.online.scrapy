@@ -13,7 +13,7 @@ def test_get_query_set_fields(connect_to_mock_mongo, set_test_document):
     assert res[0].fa_const == 'const1'
     assert res[0].fa_str == '0'
     assert res[0].fa_int == 0
-    assert res[0].fa_list == [0, 1]
+    assert res[0].fa_list == [0, 'str0']
 
     res = get_query_set(A, fields=('fa_str', 'fa_int', 'not_existed'))
     assert res[0].fa_str == '0'
@@ -62,7 +62,7 @@ def test_get_query_set_filters(connect_to_mock_mongo, set_test_document):
     """тест: фильтры по значениям полей"""
     A = set_test_document(10)
 
-    res = get_query_set(A, limit=100,filters='fa_const__exact__const1 fa_int__lt__3 fa_int__gt__0')
+    res = get_query_set(A, limit=100, filters='fa_const__exact__const1 fa_int__lt__3 fa_int__gt__0')
     assert len(res) == 2
     assert res[0].fa_const == 'const1'
     assert res[0].fa_int == 1
@@ -75,3 +75,12 @@ def test_get_query_set_filters(connect_to_mock_mongo, set_test_document):
 
     res = get_query_set(A, limit=100, filters='notfield__lt__3')
     assert len(res) == 10
+
+    res = get_query_set(A, limit=100, filters='fa_list____1')
+    assert len(res) == 1
+
+    res = get_query_set(A, limit=100, filters='fa_list____str1')
+    assert len(res) == 1
+
+    res = get_query_set(A, limit=100, filters='fa_list____notexist')
+    assert len(res) == 0

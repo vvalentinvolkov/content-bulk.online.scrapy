@@ -16,6 +16,7 @@ MODEL_CLASSES = {
 class BulkResource(Resource):
 
     # TODO: Убрать _id поле из выдачи бд
+    MAX_LIMIT = 20
 
     def __init__(self):
         self.parser = reqparse.RequestParser()
@@ -31,6 +32,5 @@ class BulkResource(Resource):
             return abort(404, msg=f'There is no {document}')
         else:
             args_ = self.parser.parse_args()
-            print('to db - ' + str(args_))
             query_set = db_services.get_query_set(document=model_class, **args_)
             return query_set.to_json(), 200

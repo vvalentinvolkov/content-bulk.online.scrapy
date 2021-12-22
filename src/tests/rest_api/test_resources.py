@@ -14,4 +14,4 @@ def test_zen_articles_resource_getting_json(client, set_test_document):
     assert python_response[0]['fa_int'] == 0
     assert python_response[0]['fa_const'] == 'const1'
     assert python_response[0]['fa_str'] == '0'
-    assert python_response[0]['fa_list'] == [0, 1]
+    assert python_response[0]['fa_list'] == [0, 'str0']

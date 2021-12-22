@@ -8,7 +8,6 @@ from src.rest_api import app, db
 @pytest.fixture
 def zen_spider():
     spider = ZenSpider()
-    spider.custom_settings.pop('JOBDIR', None)
     return spider
 
 
@@ -23,9 +22,9 @@ def set_test_document():
     def save_test_documents(num):
         for i in range(num):
             if i > num/2:
-                A(fa_const='const2', fa_str=f'{i}', fa_int=i, fa_list=[i, i + 1]).save()
+                A(fa_const='const2', fa_str=f'{i}', fa_int=i, fa_list=[i, f'str{i}']).save()
             else:
-                A(fa_const='const1', fa_str=f'{i}', fa_int=i, fa_list=[i, i + 1]).save()
+                A(fa_const='const1', fa_str=f'{i}', fa_int=i, fa_list=[i, f'str{i}']).save()
         return A
 
     return save_test_documents
@@ -46,7 +45,3 @@ def client():
 
         yield client
     disconnect()
-
-
-
-

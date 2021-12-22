@@ -6,21 +6,15 @@ import mongoengine
 from mongoengine import Document, QuerySet, InvalidQueryError, Q
 from mongoengine.queryset.transform import MATCH_OPERATORS
 
+MAX_LIMIT = 1000
+
 
 def db_connect(db: str, host: str, port: int):
-    # FIXME: поставить параметр для подключения к мок бд
-    if False:
-        _mongo_mock_connect()
-    else:
-        _mongo_connect(db=db, host=host, port=port)
-
-
-def _mongo_connect(db: str, host: str, port: int):
     db = mongoengine.connect(db=db, host=host, port=port)
     db.admin.command('ping')
 
 
-def _mongo_mock_connect():
+def mongo_mock_connect():
     db = mongoengine.connect('mongoenginetest', host='mongomock://localhost')
     db.admin.command('ping')
 
@@ -59,10 +53,9 @@ def get_query_set(
 
         Сортировка и фильтрация происходит по списку полей fields, а не по всем полям"""
 
-    MAX_LIMIT = 20
-
     # Выбираем из данных только существующие у модели поля. Если fields пустой - берем все поля
     fields = set(fields) & set(document._fields.keys()) if fields else set(document._fields.keys())
+
     limit = 1 if not limit else min(limit, MAX_LIMIT)
     page = 0 if not page else page
     slice_ = slice(page * limit, page * limit + limit)
@@ -87,8 +80,15 @@ def get_query_set(
                 field, filt, value = field_filt_value.split('__')
             except ValueError:
                 continue
-            if field in fields and filt in MATCH_OPERATORS:
-                qc = qc & Q(**{f'{field}__{filt}': value})
+            try:
+                value = int(value)
+            except ValueError:
+                pass
+            if field in fields:
+                if not filt:
+                    qc = qc & Q(**{f'{field}': value})
+                elif filt in MATCH_OPERATORS:
+                    qc = qc & Q(**{f'{field}__{filt}': value})
 
     try:
         print('document - ' + str(document))

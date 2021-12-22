@@ -15,25 +15,34 @@ parser.add_argument('-s', type=str, action='append', metavar='', default=[],
 args = parser.parse_args()
 
 
-def get_build_in_type_from_str(value: str) -> Union[str, int, bool]:
-    """Все значения, по[ожие на встроеные типы, возвращает как соответсвующий тип"""
+def _get_build_in_type_from_str(value: str) -> Union[str, int, bool, None]:
+    """Все значения, похожие на встроеные типы, возвращает как соответсвующий тип"""
     try:
         return int(value)
     except ValueError:
-        return True if value == 'True' else False if value == 'False' else value
+        if value == 'True':
+            return True
+        if value == 'False':
+            return False
+        if value == 'None':
+            return None
+        return value
 
 
 def _get_setting_from_args(settings: Iterable[str]) -> dict:
     res = {}
     for s in settings:
         k, v = s.split('=')
-        res[k] = get_build_in_type_from_str(v)
+        res[k] = _get_build_in_type_from_str(v)
     return res
+
+
+def run(spider: str, settings: dict):
+    crawler_script = CrawlScript()
+    crawler_script.crawl(spider=spider, settings=settings)
 
 
 if __name__ == '__main__':
     SPIDER_NAME = args.spider
     SETTINGS.update(_get_setting_from_args(args.s))
-    crawler = CrawlScript()
-    crawler.crawl(spider=SPIDER_NAME, settings=SETTINGS)
-
+    run(SPIDER_NAME, SETTINGS)

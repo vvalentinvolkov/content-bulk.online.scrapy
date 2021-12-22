@@ -14,7 +14,6 @@ class SomeItem(Document):
 
 
 # TODO: Вынести тесты дб наружу
-# TODO: мок подруб через переменные окружения
 class TestDbServices:
     """"""
     def test_db_save_dict(self, connect_to_mock_mongo):

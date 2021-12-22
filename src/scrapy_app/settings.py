@@ -20,7 +20,7 @@ DOWNLOAD_DELAY = 2
 CLOSESPIDER_TIMEOUT = 300   # Ограничение по времени в секундах
 # CLOSESPIDER_ITEMCOUNT = 3   # Ограничение по колличеству item вовзращенных из функций *_parse
 # CLOSESPIDER_PAGECOUN = 300  # Ограничение по колличеству страниц
-CLOSESPIDER_ERRORCOUNT = 10   # Ограничение по колличеству поднятых встроенных ошибок scrapy
+CLOSESPIDER_ERRORCOUNT = 5   # Ограничение по колличеству поднятых встроенных ошибок scrapy
 
 SPIDER_MIDDLEWARES = {
     'scrapy.spidermiddlewares.offsite.OffsiteMiddleware': 100,

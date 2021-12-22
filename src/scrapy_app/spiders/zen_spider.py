@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 import re
 
@@ -53,6 +54,7 @@ class ZenSpider(Spider):
                 self.feeds_names = self.get_feeds_names()
                 self.logger.info('Feed list: \n' + str(self.feeds_names))
             for feed_name in self.feeds_names:
+                self.logger.info(f'start_requests --> {feed_name}')
                 url = self.default_feed + '&interest_name=' + feed_name
                 kwargs = {'feed_name': feed_name}
                 yield http.Request(url=url,
@@ -174,3 +176,4 @@ class ZenSpider(Spider):
             yield {ZenFeed: {'feed_name': interest}}
 
         yield {ZenArticle: kwargs}
+
