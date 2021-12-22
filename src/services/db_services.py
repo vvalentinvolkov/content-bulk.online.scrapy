@@ -91,12 +91,7 @@ def get_query_set(
                     qc = qc & Q(**{f'{field}__{filt}': value})
 
     try:
-        print('document - ' + str(document))
-        print('qc - ' + str(qc))
-        print('fields - ' + str(fields))
-        print('sort_field - ' + str(sort_field))
-        print('slice_ - ' + str(slice_))
         return document.objects(qc).only(*fields).order_by(sort_field)[slice_]
-    except (InvalidQueryError, LookupError):
-        print('some error')
+    except (InvalidQueryError, LookupError) as e:
+        logging.error(f'Db service: {e}')
         return None
