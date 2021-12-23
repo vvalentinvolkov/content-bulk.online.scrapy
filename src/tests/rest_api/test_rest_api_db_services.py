@@ -4,7 +4,7 @@ from src.services.db_services import get_query_set
 def test_get_query_set_fields(connect_to_mock_mongo, set_test_document):
     """тест получение заданных полей"""
     A = set_test_document(10)
-    res = get_query_set(A, fields=('fa_str', 'fa_int'))
+    res = get_query_set(A, fields='fa_str fa_int')
     assert res[0].fa_str == '0'
     assert res[0].fa_int == 0
     assert res[0].fa_list is None
@@ -15,7 +15,7 @@ def test_get_query_set_fields(connect_to_mock_mongo, set_test_document):
     assert res[0].fa_int == 0
     assert res[0].fa_list == [0, 'str0']
 
-    res = get_query_set(A, fields=('fa_str', 'fa_int', 'not_existed'))
+    res = get_query_set(A, fields='fa_str fa_int not_existed')
     assert res[0].fa_str == '0'
     assert res[0].fa_int == 0
     assert res[0].fa_list is None

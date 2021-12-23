@@ -104,10 +104,12 @@ class TestZenSpiderUnits:
             body=requests.get('https://zen.yandex.ru/media/adstella/'
                               '7-planet-pohojih-na-zemliu-611262e8ccb50c2963f547a4').text,
             encoding='utf-8')
-        res = zen_spider.parse_article(response, feed_name='feed_name1', feed_subscribers=10, interests=['feed1', 'feed2'])
-        items = [item for item in next(res)]
+        gen = zen_spider.parse_article(response, feed_name='feed_name1', feed_subscribers=10, interests=['feed1', 'feed2'])
+        items = [item for item in gen]
         feed = items[0][ZenFeed]
-        article = items[1][ZenArticle]
+        assert feed['feed_name'] == 'feed_name1'
+        assert feed['feed_subscribers'] == 10
+        article = items[len(items)-1][ZenArticle]
         assert article['visitors'] is not None
         assert article['reads'] is not None
         assert article['read_time'] is not None
@@ -115,5 +117,6 @@ class TestZenSpiderUnits:
         assert article['num_images'] is not None
         assert article['interests'][0] == 'feed1'
         assert article['interests'][1] == 'feed2'
-        assert feed['feed_name'] == 'feed_name1'
-        assert feed['feed_subscribers'] == 10
+        for i in range(1, len(items)-1):
+            feed_from_interests = items[i][ZenFeed]
+            assert feed_from_interests['feed_name'] == article['interests'][i-1]

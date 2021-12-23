@@ -13,7 +13,6 @@ class SomeItem(Document):
     second_field = StringField()
 
 
-# TODO: Вынести тесты дб наружу
 class TestDbServices:
     """"""
     def test_db_save_dict(self, connect_to_mock_mongo):
@@ -69,34 +68,3 @@ class TestDbServices:
         db_services.db_save(document_class=SomeItem, item=item1)
         with pytest.raises(NotUniqueError):
             db_services.db_save(document_class=SomeItem, item=item2)
-
-
-class TestItems:
-    """"""
-    parsed_item1 = dict(feed_name='feed1', feed_subscribers=100, title='title1', link='https://zen.yandex.ru/',
-                        public_date=200, time_public_to_parse=300, subscribers=400, audience=500, likes=600,
-                        comments=700, interests=['feed1', 'feed2', 'feed3'], visitors=800, reads=900, read_time=1000,
-                        length=1100, num_images=1200)
-    parsed_item2 = dict(feed_name='feed2', feed_subscribers=100, title='title1', link='https://zen.yandex.ru/2',
-                        public_date=200, time_public_to_parse=300, subscribers=400, audience=500, likes=600,
-                        comments=700, interests=['feed1', 'feed2', 'feed3'], visitors=800, reads=900, read_time=1000,
-                        length=1100, num_images=1200)
-
-    def test_save_zen_article_with_creating_zen_feed(self, connect_to_mock_mongo):
-        """тест: при сохранении ZenArticle создаются и сохраняются обхекты feed
-        из атрибутов feed и interests, без перезаписи уже существующий ZenFeed"""
-        spider_res_gen1 = ZenSpider.load_item(self.parsed_item1)
-        spider_res_gen2 = ZenSpider.load_item(self.parsed_item2)
-        MongoPipeline().process_item(item=next(spider_res_gen1))
-        MongoPipeline().process_item(item=next(spider_res_gen1))
-        MongoPipeline().process_item(item=next(spider_res_gen2))
-        MongoPipeline().process_item(item=next(spider_res_gen2))
-
-        articles = ZenArticle.objects.all()
-        feeds = ZenFeed.objects.all()
-
-        assert len(articles) == 2
-        assert articles[0].title == 'title1'
-        assert len(feeds) == 2
-        assert next(f for f in feeds if f.feed_name == 'feed1').feed_subscribers == 100
-        assert next(f for f in feeds if f.feed_name == 'feed2').feed_subscribers == 100

@@ -21,8 +21,7 @@ def test_get_visitors():
         ('', 0)
     ]
     for i, o in io_values_false:
-        with pytest.raises(DropItem):
-            get_visitors(i)
+        assert get_visitors(i) is None
 
 
 def test_get_reads():
@@ -42,8 +41,7 @@ def test_get_reads():
         ('', 0)
     ]
     for i, o in io_values_false:
-        with pytest.raises(DropItem):
-            get_reads(i)
+        assert get_reads(i) is None
 
 
 def test_get_read_time():
@@ -65,5 +63,4 @@ def test_get_read_time():
         ('', 0)
     ]
     for i, o in io_values_false:
-        with pytest.raises(DropItem):
-            get_read_time(i)
+        assert get_read_time(i) is None
