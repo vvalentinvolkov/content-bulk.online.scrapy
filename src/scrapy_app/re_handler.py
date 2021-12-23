@@ -14,13 +14,13 @@ def get_visitors(text: str) -> Optional[int]:
     if text:
         parsed_value = re.search(r'^(?P<num>[\d.]+)(?P<unit>(:?k|\sтыс))*', text.lower())
         if not parsed_value:
-            logger.warning(f'Unreadable value {str}')
+            logger.warning(f'Unreadable value {text}')
             return None
         elif parsed_value['unit'] and ('k' in parsed_value['unit'] or 'тыс' in parsed_value['unit']):
             return int(float(parsed_value['num'])*1000)
         else:
             return int(parsed_value['num'])
-    raise None
+    return None
 
 
 def get_reads(text: str) -> Optional[int]:
@@ -31,7 +31,7 @@ def get_reads(text: str) -> Optional[int]:
     if text:
         parsed_value = re.search(r'^(?P<num>[\d.]+)(?P<unit>(:?k|\sтыс))*', text.lower())
         if not parsed_value:
-            logger.warning(f'Unreadable value {str}')
+            logger.warning(f'Unreadable value {text}')
             return None
         elif parsed_value['unit'] and ('k' in parsed_value['unit'] or 'тыс' in parsed_value['unit']):
             return int(float(parsed_value['num'])*1000)
@@ -48,7 +48,7 @@ def get_read_time(text: str) -> Optional[int]:
     if text:
         parsed_value = re.search(r'^(?P<num>[\d.]+)\s*(?P<unit>.*)', text.lower().replace(',', '.'))
         if not parsed_value:
-            logger.warning(f'Unreadable value {str}')
+            logger.warning(f'Unreadable value {text}')
             return None
         elif 'second' in parsed_value['unit'] or 'секунд' in parsed_value['unit']:
             return int(parsed_value['num'])
