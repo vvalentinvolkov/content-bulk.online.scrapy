@@ -1,5 +1,3 @@
-from collections import UserDict
-
 from mongoengine import Document, StringField, IntField, URLField, ListField, ReferenceField, NotUniqueError, NULLIFY
 
 

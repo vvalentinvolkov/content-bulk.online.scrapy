@@ -7,7 +7,9 @@ SPIDER_NAME = 'ZenSpider'
 SETTINGS = {}
 
 
-parser = argparse.ArgumentParser(description='run scrapy crawl command')
+parser = argparse.ArgumentParser(description='run scrapy crawl command \n'
+                                             'available settings: LOG_FILE, LOG_LEVEL, DOWNLOAD_DELAY,\n'
+                                             'CLOSESPIDER_TIMEOUT, CLOSESPIDER_ITEMCOUNT, CLOSESPIDER_PAGECOUN, CLOSESPIDER_ERRORCOUNT')
 parser.add_argument('-spider', type=str, default=SPIDER_NAME,  help='name of spider in this project to crawl')
 parser.add_argument('-s', type=str, action='append', metavar='', default=[],
                     help='update settings with kay-value pair')

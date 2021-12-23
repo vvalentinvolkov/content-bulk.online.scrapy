@@ -151,7 +151,6 @@ class ZenSpider(Spider):
     def parse_article(self, response, **kwargs):
         """Получение данных самой статьи - селекторы содержат функции-обработчики в css_handler.
         Отдает в pipeline kwargs, которые содержит все данные полученые в пред запросах"""
-
         kwargs['visitors'] = re_handler.get_visitors(
             response.css('.article-stats-view__tip div:nth-child(1) span::text').get())
         kwargs['reads'] = re_handler.get_reads(
