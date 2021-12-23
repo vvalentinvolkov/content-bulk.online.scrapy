@@ -1,4 +1,5 @@
 from mongoengine import Document, StringField, IntField, URLField, ListField, ReferenceField, NotUniqueError, NULLIFY
+from .query_set_converter import ConvertibleQuerySet
 
 
 class CommonArticleItem(Document):
@@ -18,10 +19,11 @@ class CommonArticleItem(Document):
 
 
 class ZenFeed(Document):
-    feed_name = StringField(primary_key=True)
+    feed_name = StringField(required=True)
     feed_subscribers = IntField(default=None)
 
-    meta = {'collection': 'zen_feeds'}
+    meta = {'collection': 'zen_feeds',
+            'queryset_class': ConvertibleQuerySet}
 
     def save(self, *args, **kwargs):
         # Если feed_subscribers=None
@@ -45,7 +47,8 @@ class ZenArticle(CommonArticleItem):
     read_time = IntField(required=True)
     subscribers = IntField(required=True)
 
-    meta = {'collection': 'zen_articles'}
+    meta = {'collection': 'zen_articles',
+            'queryset_class': ConvertibleQuerySet}
 
 
 
