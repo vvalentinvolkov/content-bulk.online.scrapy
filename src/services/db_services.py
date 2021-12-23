@@ -1,5 +1,4 @@
 import logging
-import os
 from typing import Union, Type, Optional, Iterable
 
 import mongoengine
@@ -19,6 +18,7 @@ def mongo_mock_connect():
     db.admin.command('ping')
 
 
+# TODO: Зачем это?
 def get_all_scalar(doc: Type[Document], *fields) -> list:
     """Возвращает поля fields от всех объектов типа doc"""
     return list(doc.objects.scalar(*fields))
@@ -38,7 +38,7 @@ def db_save(item: Union[dict, Document], document_class: type = None):
 
 def get_query_set(
         document: Optional[Type[Document]] = None,
-        fields: Optional[Iterable[str]] = (),
+        fields: Optional[str] = None,
         limit: Optional[int] = 1,
         page: Optional[int] = 0,
         sort_field: Optional[str] = None,
@@ -54,7 +54,12 @@ def get_query_set(
         Сортировка и фильтрация происходит по списку полей fields, а не по всем полям"""
 
     # Выбираем из данных только существующие у модели поля. Если fields пустой - берем все поля
-    fields = set(fields) & set(document._fields.keys()) if fields else set(document._fields.keys())
+    # QuerySet будет держать fields в QuerySet._loaded_fields.fields
+    if fields:
+        fields = set(fields.split(' ')) & set(document._fields.keys())
+    else:
+        fields = set(document._fields.keys())
+        fields.remove('id')
 
     limit = 1 if not limit else min(limit, MAX_LIMIT)
     page = 0 if not page else page
@@ -89,7 +94,6 @@ def get_query_set(
                     qc = qc & Q(**{f'{field}': value})
                 elif filt in MATCH_OPERATORS:
                     qc = qc & Q(**{f'{field}__{filt}': value})
-
     try:
         return document.objects(qc).only(*fields).order_by(sort_field)[slice_]
     except (InvalidQueryError, LookupError) as e:
