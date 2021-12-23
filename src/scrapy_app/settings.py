@@ -5,7 +5,7 @@ DB_HOST = os.environ.get('DB_HOST', default='localhost')
 DB_PORT = int(os.environ.get('DB_PORT', default=27017))
 DB_NAME = os.environ.get('DB_NAME', default='default_articles')
 
-LOG_FILE = 'src/scrapy_app/logs/ZenSpider.txt'
+
 LOG_LEVEL = 'INFO'
 
 SPIDER_MODULES = ['scrapy_app.spiders']
@@ -18,8 +18,8 @@ ROBOTSTXT_OBEY = False
 DOWNLOAD_DELAY = 2
 
 CLOSESPIDER_TIMEOUT = 300   # Ограничение по времени в секундах
-# CLOSESPIDER_ITEMCOUNT = 3   # Ограничение по колличеству item вовзращенных из функций *_parse
-# CLOSESPIDER_PAGECOUN = 300  # Ограничение по колличеству страниц
+CLOSESPIDER_ITEMCOUNT = 10   # Ограничение по колличеству item вовзращенных из функций *_parse
+CLOSESPIDER_PAGECOUN = 50  # Ограничение по колличеству страниц
 CLOSESPIDER_ERRORCOUNT = 5   # Ограничение по колличеству поднятых встроенных ошибок scrapy
 
 SPIDER_MIDDLEWARES = {
