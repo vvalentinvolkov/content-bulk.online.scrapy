@@ -33,4 +33,4 @@ class BulkResource(Resource):
         else:
             args_ = self.parser.parse_args()
             query_set = db_services.get_query_set(document=model_class, **args_)
-            return query_set.to_json(), 200
+            return query_set.to_json(ensure_ascii=False), 200
