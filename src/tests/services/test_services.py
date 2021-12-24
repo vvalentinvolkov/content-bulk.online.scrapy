@@ -1,11 +1,7 @@
 import pytest
-from mongoengine import StringField, ListField, ReferenceField, ConnectionFailure, FieldDoesNotExist, ValidationError, \
-    NotUniqueError, Document
+from mongoengine import StringField, ConnectionFailure, FieldDoesNotExist, ValidationError, NotUniqueError, Document
 
 from src.services import db_services
-from src.services.models import ZenArticle, ZenFeed
-from src.scrapy_app.pipelines import MongoPipeline
-from src.scrapy_app.spiders.zen_spider import ZenSpider
 
 
 class SomeItem(Document):

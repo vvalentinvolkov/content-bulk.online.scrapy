@@ -23,7 +23,7 @@ class BulkResource(Resource):
         self.parser.add_argument('fields', location='args')
         self.parser.add_argument('limit', location='args', type=int)
         self.parser.add_argument('page', location='args', type=int)
-        self.parser.add_argument('sort_field', location='args')
+        self.parser.add_argument('sort', location='args')
         self.parser.add_argument('filters', location='args')
 
     def get(self, document):

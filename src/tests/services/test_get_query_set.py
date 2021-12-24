@@ -41,20 +41,20 @@ def test_get_query_set_limit_and_page(connect_to_mock_mongo, set_test_document):
                 assert res[limit].fa_int == page*limit + limit
 
 
-def test_get_query_set_sort_field(connect_to_mock_mongo, set_test_document):
+def test_get_query_set_sort(connect_to_mock_mongo, set_test_document):
     """тест сортировки по одному полю"""
     A = set_test_document(10)
 
-    res = get_query_set(A, sort_field='fa_int__a')
+    res = get_query_set(A, sort='fa_int__a')
     assert res[0].fa_int == 0
 
-    res = get_query_set(A, sort_field='fa_int__d')
+    res = get_query_set(A, sort='fa_int__d')
     assert res[0].fa_int == 9
 
-    res = get_query_set(A, sort_field='notfield__d')
+    res = get_query_set(A, sort='notfield__d')
     assert res[0].fa_int == 0
 
-    res = get_query_set(A, sort_field='fa_int__notcorrect')
+    res = get_query_set(A, sort='fa_int__notcorrect')
     assert res[0].fa_int == 0
 
 

@@ -1,7 +1,4 @@
-import pytest
-from scrapy.exceptions import DropItem
-
-from src.scrapy_app.re_handler import *
+from src.scrapy_app.spiders.re_handler import *
 
 
 def test_get_visitors():
@@ -64,3 +61,21 @@ def test_get_read_time():
     ]
     for i, o in io_values_false:
         assert get_read_time(i) is None
+
+
+def test_get_length():
+    """тест получения общей длины всех отрывков статьи"""
+    final_length = 100
+    s = 'a'*final_length
+    list_str = [s[i*10:i*10 + 10] for i in range(10)]
+    assert get_length(list_str) == final_length
+    assert get_length(['']) is None
+    assert get_length([]) is None
+    assert get_length(None) is None
+
+
+def test_get_num_images():
+    assert get_num_images([1, 2, 3]) == 3
+    assert get_num_images([]) is None
+    assert get_num_images(None) is None
+

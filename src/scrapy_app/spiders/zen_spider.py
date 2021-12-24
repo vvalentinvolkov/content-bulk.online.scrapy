@@ -1,4 +1,3 @@
-import os
 from datetime import datetime
 import re
 
@@ -7,7 +6,8 @@ from scrapy.exceptions import CloseSpider
 from scrapy.http import TextResponse
 from collections import Counter
 
-from .. import re_handler, db
+from .. import db
+from . import re_handler
 from src.services import db_services
 from src.services.models import ZenArticle, ZenFeed
 

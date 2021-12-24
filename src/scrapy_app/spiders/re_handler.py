@@ -6,7 +6,7 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 
-def get_visitors(text: str) -> Optional[int]:
+def get_visitors(text: Optional[str]) -> Optional[int]:
     """Получение просмотров:
     - '223k story views'('223 тыс. просмотр публикации')
     - '223 story views'('223 просмотр публикации')
@@ -23,7 +23,7 @@ def get_visitors(text: str) -> Optional[int]:
     return None
 
 
-def get_reads(text: str) -> Optional[int]:
+def get_reads(text: Optional[str]) -> Optional[int]:
     """Получение дочиток:
     - '144k full reads'('144 тыс. прочитали')
     - '144 full reads'('144 прочитали')
@@ -40,7 +40,7 @@ def get_reads(text: str) -> Optional[int]:
     return None
 
 
-def get_read_time(text: str) -> Optional[int]:
+def get_read_time(text: Optional[str]) -> Optional[int]:
     """Получение дочиток:
     - '4,5 minutes — average reading time'('4,5 минуты — среднее время чтения')
     - '50 seconds — average reading time'('50 секунд — среднее время чтения')
@@ -57,14 +57,15 @@ def get_read_time(text: str) -> Optional[int]:
     return None
 
 
-def get_length(texts: list) -> Optional[int]:
-    length = len(''.join(texts))
-    if length == 0:
-        return None
-    return length
+def get_length(texts: Optional[list[str]]) -> Optional[int]:
+    if texts:
+        length = len(''.join(texts))
+        if length == 0:
+            return None
+        return length
 
 
-def get_num_images(tags: list) -> Optional[int]:
+def get_num_images(tags: Optional[list]) -> Optional[int]:
     if tags:
         return len(tags)
     return None

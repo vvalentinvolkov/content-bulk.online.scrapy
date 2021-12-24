@@ -41,14 +41,14 @@ def get_query_set(
         fields: Optional[str] = None,
         limit: Optional[int] = 1,
         page: Optional[int] = 0,
-        sort_field: Optional[str] = None,
+        sort: Optional[str] = None,
         filters: Optional[str] = None) -> Optional[QuerySet]:
     """Возвращает queryset. По умолчанию возвращает первый документ
 
         :fields: возвращаемые поля
         :limit: колличество возвращаемых документов
         :page: колличество пропущеных документов по limit штук
-        :sort_field: поле сортировки
+        :sort: поле сортировки
         :filters: 3 параметра - поле__фильтр__значение
 
         Сортировка и фильтрация происходит по списку полей fields, а не по всем полям"""
@@ -65,17 +65,17 @@ def get_query_set(
     page = 0 if not page else page
     slice_ = slice(page * limit, page * limit + limit)
 
-    if sort_field and '__' in sort_field:
-        field_, direct_ = sort_field.split('__')
+    if sort and '__' in sort:
+        field_, direct_ = sort.split('__')
         if field_ in fields:
             if direct_ == 'a':
-                sort_field = '+' + field_
+                sort = '+' + field_
             elif direct_ == 'd':
-                sort_field = '-' + field_
+                sort = '-' + field_
             else:
-                sort_field = None
+                sort = None
         else:
-            sort_field = None
+            sort = None
 
     # Убираем пары с неуказаными полеми или с операторами не из MATCH_OPERATORS
     qc = Q()
@@ -95,7 +95,7 @@ def get_query_set(
                 elif filt in MATCH_OPERATORS:
                     qc = qc & Q(**{f'{field}__{filt}': value})
     try:
-        return document.objects(qc).only(*fields).order_by(sort_field)[slice_]
+        return document.objects(qc).only(*fields).order_by(sort)[slice_]
     except (InvalidQueryError, LookupError) as e:
         logging.error(f'Db service: {e}')
         return None
