@@ -1,4 +1,4 @@
-from mongoengine import Document, StringField, IntField, URLField, ListField, ReferenceField, NotUniqueError, NULLIFY
+from mongoengine import Document, StringField, IntField, URLField, ListField, NotUniqueError
 from .query_set_converter import ConvertibleQuerySet
 
 
@@ -19,7 +19,7 @@ class CommonArticleItem(Document):
 
 
 class ZenFeed(Document):
-    feed_name = StringField(required=True)
+    feed_name = StringField(required=True, unique=True)
     feed_subscribers = IntField(default=None)
 
     meta = {'collection': 'zen_feeds',
