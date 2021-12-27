@@ -17,7 +17,7 @@ def test_bulk_fields_query(client, set_test_document):
     response = json.loads(response_)
 
     for item in response:
-        assert '_id' in item
+        assert '_id' not in item
         assert 'fa_int' in item
         assert 'fa_str' in item
         assert 'fa_const' not in item

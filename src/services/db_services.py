@@ -5,6 +5,8 @@ import mongoengine
 from mongoengine import Document, QuerySet, InvalidQueryError, Q
 from mongoengine.queryset.transform import MATCH_OPERATORS
 
+from src.services.query_set_converter import ConvertibleQuerySet
+
 MAX_LIMIT = 1000
 
 
@@ -42,7 +44,7 @@ def get_query_set(
         limit: Optional[int] = 1,
         page: Optional[int] = 0,
         sort: Optional[str] = None,
-        filters: Optional[str] = None) -> Optional[QuerySet]:
+        filters: Optional[str] = None) -> Optional[ConvertibleQuerySet]:
     """Возвращает queryset. По умолчанию возвращает первый документ
 
         :fields: возвращаемые поля
@@ -95,7 +97,7 @@ def get_query_set(
                 elif filt in MATCH_OPERATORS:
                     qc = qc & Q(**{f'{field}__{filt}': value})
     try:
-        return document.objects(qc).only(*fields).order_by(sort)[slice_]
+        return document.objects(qc).fields(id=0).only(*fields).order_by(sort)[slice_]
     except (InvalidQueryError, LookupError) as e:
         logging.error(f'Db service: {e}')
         return None
