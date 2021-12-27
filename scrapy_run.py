@@ -8,14 +8,15 @@ SETTINGS = {}
 
 
 parser = argparse.ArgumentParser(description='''run scrapy crawl command
-                                             available settings:
-                                             LOG_FILE=scr/scrapy_app/logs/*.log
-                                             LOG_LEVEL=INFO
-                                             DOWNLOAD_DELAY=2
-                                             CLOSESPIDER_TIMEOUT=300
-                                             CLOSESPIDER_ITEMCOUNT=10
-                                             CLOSESPIDER_PAGECOUN=50
-                                             CLOSESPIDER_ERRORCOUNT=5''')
+                                             available settings:\n
+                                             LOG_FILE=scr/scrapy_app/logs/*.log\n
+                                             LOG_LEVEL=INFO\n
+                                             DOWNLOAD_DELAY=2\n
+                                             CLOSESPIDER_TIMEOUT=300\n
+                                             CLOSESPIDER_ITEMCOUNT=10\n
+                                             CLOSESPIDER_PAGECOUN=50\n
+                                             CLOSESPIDER_ERRORCOUNT=5\n
+                                             ZEN_FEEDS_TO_PARSE=[...]''')
 parser.add_argument('-spider', type=str, default=SPIDER_NAME,  help='name of spider in this project to crawl')
 parser.add_argument('-s', type=str, action='append', metavar='', default=[],
                     help='update settings with kay-value pair')

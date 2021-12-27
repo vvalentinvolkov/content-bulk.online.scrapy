@@ -1,8 +1,8 @@
 import logging
-from typing import Union, Type, Optional, Iterable
+from typing import Union, Type, Optional
 
 import mongoengine
-from mongoengine import Document, QuerySet, InvalidQueryError, Q
+from mongoengine import Document, InvalidQueryError, Q
 from mongoengine.queryset.transform import MATCH_OPERATORS
 
 from src.services.query_set_converter import ConvertibleQuerySet
@@ -63,7 +63,7 @@ def get_query_set(
         fields = set(document._fields.keys())
         fields.remove('id')
 
-    limit = 1 if not limit else min(limit, MAX_LIMIT)
+    limit = MAX_LIMIT if not limit else min(limit, MAX_LIMIT)
     page = 0 if not page else page
     slice_ = slice(page * limit, page * limit + limit)
 
