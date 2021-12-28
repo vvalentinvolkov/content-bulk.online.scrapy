@@ -24,5 +24,5 @@ with app.app_context():
 
 api = Api(app)
 api.add_resource(BulkResource, '/<string:document>')
-api.add_resource(AggregationResource, 'aggr/<string:document>')
+api.add_resource(AggregationResource, '/aggr/<string:document>')
 
