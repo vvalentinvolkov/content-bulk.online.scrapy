@@ -35,4 +35,7 @@ class BulkResource(Resource):
         else:
             args_ = self.parser.parse_args()
             query_set = db_services.get_query_set(document=model_class, **args_)
-            return query_set.to_json(), 200
+            res = flask.Response(response=query_set.to_json(), status=200)
+            res.content_type = 'application/json; charset=utf-8'
+            res.charset = 'utf-8'
+            return res
