@@ -39,11 +39,11 @@ def db_save(item: Union[dict, Document], document_class: type = None):
 def get_query_set(
         document: Optional[Type[Document]] = None,
         fields: Optional[str] = None,
-        limit: Optional[int] = 1,
+        limit: Optional[int] = None,
         page: Optional[int] = 0,
         sort: Optional[str] = None,
         filters: Optional[str] = None) -> Optional[ConvertibleQuerySet]:
-    """Возвращает queryset. По умолчанию возвращает первый документ
+    """Возвращает ConvertibleQuerySet с lazy загрузкой.
 
         :fields: возвращаемые поля
         :limit: колличество возвращаемых документов
@@ -98,8 +98,12 @@ def get_query_set(
                 elif filt in MATCH_OPERATORS:
                     qc = qc & Q(**{f'{field}__{filt}': value})
     try:
-        r
-        return document.objects(qc).fields(id=0).only(*fields).order_by(sort)[slice_]
+        return document.objects.fields(id=0).only(*fields).order_by(sort)[slice_]
     except (InvalidQueryError, LookupError) as e:
         logging.error(f'Db service: {e}')
         return None
+
+
+def get_count(qs: ConvertibleQuerySet, with_slice: bool = False):
+    """Возвращает число элементов QuerySet"""
+    return qs.count(with_limit_and_skip=with_slice)
