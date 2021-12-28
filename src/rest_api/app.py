@@ -5,7 +5,7 @@ from flask import Flask
 from flask_restful import Api
 
 from . import db
-from .resources import BulkResource
+from .resources import BulkResource, AggregationResource
 
 
 def create_app(**kwargs) -> Flask:
@@ -24,4 +24,5 @@ with app.app_context():
 
 api = Api(app)
 api.add_resource(BulkResource, '/<string:document>')
+api.add_resource(AggregationResource, 'aggr/<string:document>')
 
