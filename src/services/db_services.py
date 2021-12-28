@@ -83,7 +83,7 @@ def get_query_set(
     # Убираем пары с неуказаными полеми или с операторами не из MATCH_OPERATORS
     qc = Q()
     if filters:
-        for field_filt_value in filters.split(' '):
+        for field_filt_value in filters.split(';'):
             try:
                 field, filt, value = field_filt_value.split('__')
             except ValueError:
@@ -98,7 +98,7 @@ def get_query_set(
                 elif filt in MATCH_OPERATORS:
                     qc = qc & Q(**{f'{field}__{filt}': value})
     try:
-        return document.objects.fields(id=0).only(*fields).order_by(sort)[slice_]
+        return document.objects(qc).fields(id=0).only(*fields).order_by(sort)[slice_]
     except (InvalidQueryError, LookupError) as e:
         logging.error(f'Db service: {e}')
         return None
