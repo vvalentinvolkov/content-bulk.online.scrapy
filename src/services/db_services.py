@@ -7,8 +7,6 @@ from mongoengine.queryset.transform import MATCH_OPERATORS
 
 from src.services.query_set_converter import ConvertibleQuerySet
 
-MAX_LIMIT = 1000
-
 
 def db_connect(db: str, host: str, port: int):
     db = mongoengine.connect(db=db, host=host, port=port)
@@ -63,9 +61,12 @@ def get_query_set(
         fields = set(document._fields.keys())
         fields.remove('id')
 
-    limit = MAX_LIMIT if not limit else min(limit, MAX_LIMIT)
-    page = 0 if not page else page
-    slice_ = slice(page * limit, page * limit + limit)
+    if not limit:
+        slice_ = slice(None, None)
+    elif not page:
+        slice_ = slice(0, limit)
+    else:
+        slice_ = slice(page * limit, page * limit + limit)
 
     if sort and '__' in sort:
         field_, direct_ = sort.split('__')
@@ -97,6 +98,7 @@ def get_query_set(
                 elif filt in MATCH_OPERATORS:
                     qc = qc & Q(**{f'{field}__{filt}': value})
     try:
+        r
         return document.objects(qc).fields(id=0).only(*fields).order_by(sort)[slice_]
     except (InvalidQueryError, LookupError) as e:
         logging.error(f'Db service: {e}')
