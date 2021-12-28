@@ -23,5 +23,5 @@ with app.app_context():
     db.init_db()
 
 api = Api(app)
-api.add_resource(BulkResource, '/bulk/<string:document>')
+api.add_resource(BulkResource, '/<string:document>')
 
