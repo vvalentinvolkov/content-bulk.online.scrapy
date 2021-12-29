@@ -1,4 +1,4 @@
-from src.rest_api import app as application
+from src.flask_app import app as application
 
 app = application.app
 

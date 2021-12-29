@@ -1,3 +1,4 @@
+import json
 import logging
 
 import flask
@@ -14,16 +15,18 @@ MODEL_CLASSES = {
     'zen_feeds': ZenFeed,
 }
 
+parser = reqparse.RequestParser()
+parser.add_argument('fields', location='args')
+parser.add_argument('limit', location='args', type=int)
+parser.add_argument('page', location='args', type=int)
+parser.add_argument('sort', location='args')
+parser.add_argument('filters', location='args')
+
 
 class BulkResource(Resource):
 
     def __init__(self):
-        self.parser = reqparse.RequestParser()
-        self.parser.add_argument('fields', location='args')
-        self.parser.add_argument('limit', location='args', type=int)
-        self.parser.add_argument('page', location='args', type=int)
-        self.parser.add_argument('sort', location='args')
-        self.parser.add_argument('filters', location='args')
+        self.parser = parser.copy()
 
     def get(self, document):
         model_class = MODEL_CLASSES.get(document)
@@ -40,11 +43,9 @@ class BulkResource(Resource):
 class AggregationResource(Resource):
 
     def __init__(self):
-        self.parser = reqparse.RequestParser()
-        self.parser.add_argument('limit', location='args', type=int)
-        self.parser.add_argument('page', location='args', type=int)
-        self.parser.add_argument('sort', location='args')
-        self.parser.add_argument('filters', location='args')
+        self.parser = parser.copy()
+        self.parser.add_argument('aggr_funcs', location='args')
+        self.parser.add_argument('aggr_field', location='args')
 
     def get(self, document):
         model_class = MODEL_CLASSES.get(document)
@@ -52,8 +53,7 @@ class AggregationResource(Resource):
             return abort(404, msg=f'There is no {document}')
         else:
             args_ = self.parser.parse_args()
-            query_set = db_services.get_query_set(document=model_class, **args_)
-            count = db_services.get_count(query_set)
-            res = flask.Response(response="{count: %s}" % count, status=200)
+            aggr_res = db_services.get_aggr_res(document=model_class, **args_)
+            res = flask.Response(response=json.dumps(aggr_res), status=200)
             res.content_type = 'application/json; charset=utf-8'
             return res

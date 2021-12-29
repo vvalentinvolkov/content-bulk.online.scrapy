@@ -2,7 +2,7 @@ import pytest
 from mongoengine import connect, disconnect, Document, StringField, IntField, ListField
 
 from src.scrapy_app.spiders.zen_spider import ZenSpider
-from src.rest_api import app, db
+from src.flask_app import app, db
 
 
 @pytest.fixture

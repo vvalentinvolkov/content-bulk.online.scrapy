@@ -4,7 +4,7 @@ from src.services.db_services import get_query_set
 def test_get_query_set_fields(connect_to_mock_mongo, set_test_document):
     """тест получение заданных полей"""
     A = set_test_document(10)
-    res = get_query_set(A, fields='fa_str fa_int')
+    res = get_query_set(A, fields='fa_str;fa_int')
     assert res[0].fa_str == '0'
     assert res[0].fa_int == 0
     assert res[0].fa_list is None
@@ -15,7 +15,7 @@ def test_get_query_set_fields(connect_to_mock_mongo, set_test_document):
     assert res[0].fa_int == 0
     assert res[0].fa_list == [0, 'str0']
 
-    res = get_query_set(A, fields='fa_str fa_int not_existed')
+    res = get_query_set(A, fields='fa_str;fa_int;not_existed')
     assert res[0].fa_str == '0'
     assert res[0].fa_int == 0
     assert res[0].fa_list is None
@@ -26,7 +26,12 @@ def test_get_query_set_limit_and_page(connect_to_mock_mongo, set_test_document):
     num = 10
     A = set_test_document(num)
 
+    res = get_query_set(A)
+    assert len(res) == num
+
     for page in range(num):
+        res = get_query_set(A, page=page)
+        assert len(res) == num
         for limit in range(1, num):
             res = get_query_set(A, limit=limit, page=page)
             if limit >= num and page < num/limit:
@@ -62,12 +67,12 @@ def test_get_query_set_filters(connect_to_mock_mongo, set_test_document):
     """тест: фильтры по значениям полей"""
     A = set_test_document(10)
 
-    res = get_query_set(A, limit=100, filters='fa_const__exact__const1 fa_int__lt__3 fa_int__gt__0')
+    res = get_query_set(A, limit=100, filters='fa_const__exact__const1;fa_int__lt__3;fa_int__gt__0')
     assert len(res) == 2
     assert res[0].fa_const == 'const1'
     assert res[0].fa_int == 1
 
-    res = get_query_set(A, limit=100, filters='fa_const__exact__const3 fa_int__lt__3')
+    res = get_query_set(A, limit=100, filters='fa_const__exact__const3;fa_int__lt__3')
     assert len(res) == 0
 
     res = get_query_set(A, limit=100, filters='fa_int__notcorrect__3')
